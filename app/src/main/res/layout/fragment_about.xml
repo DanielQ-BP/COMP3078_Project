@@ -1,28 +1,247 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:background="@color/gray_light">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="About ParkSpot"
-            android:textStyle="bold"
-            android:textSize="26sp"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/aboutText"
+        <!-- Header Banner -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:lineSpacingExtra="6dp"
-            android:textColor="#333333" />
+            android:background="@color/parkspot_green"
+            android:orientation="vertical"
+            android:paddingTop="36dp"
+            android:paddingBottom="32dp"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:src="@mipmap/ic_launcher_round"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ParkSpot"
+                android:textColor="@color/white"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="The smarter way to park"
+                android:textColor="#CCFFFFFF"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- Content area -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Mission card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Our Mission"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/parkspot_green"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="ParkSpot connects drivers who need convenient, affordable parking with residents and businesses that have unused spaces — reducing search time, traffic, and uncertainty in busy areas."
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:lineSpacingExtra="4dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- For Drivers card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🚗  For Drivers"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/parkspot_green"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Search for nearby parking by price, distance, and time" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="View detailed listings with location and availability" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reserve spots and get navigation to your booking" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- For Owners card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🏠  For Owners"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/parkspot_green"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="List your available parking space in minutes" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="8dp">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Set your own price, hours, and availability" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/circle_bullet" android:layout_marginTop="5dp" android:layout_marginRight="10dp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Manage active and inactive listings easily" android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Team card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="👥  The Team"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/parkspot_green"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Israel -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="14dp" android:gravity="center_vertical">
+                        <TextView android:layout_width="38dp" android:layout_height="38dp" android:text="IO" android:gravity="center" android:textColor="@color/white" android:textStyle="bold" android:textSize="13sp" android:background="@drawable/circle_avatar_bg" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginLeft="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Israel Osunkoya" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Developer · Group DIAS" android:textSize="12sp" android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Andres -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="14dp" android:gravity="center_vertical">
+                        <TextView android:layout_width="38dp" android:layout_height="38dp" android:text="AS" android:gravity="center" android:textColor="@color/white" android:textStyle="bold" android:textSize="13sp" android:background="@drawable/circle_avatar_bg" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginLeft="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Andres Sanchez Alzate" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Developer · Group DIAS" android:textSize="12sp" android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Sara -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="14dp" android:gravity="center_vertical">
+                        <TextView android:layout_width="38dp" android:layout_height="38dp" android:text="SM" android:gravity="center" android:textColor="@color/white" android:textStyle="bold" android:textSize="13sp" android:background="@drawable/circle_avatar_bg" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginLeft="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sara Mosquera Mayo" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Developer · Group DIAS" android:textSize="12sp" android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Daniel -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                        <TextView android:layout_width="38dp" android:layout_height="38dp" android:text="DQ" android:gravity="center" android:textColor="@color/white" android:textStyle="bold" android:textSize="13sp" android:background="@drawable/circle_avatar_bg" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginLeft="12dp">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Daniel Quach" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/text_primary" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Developer · Group DIAS" android:textSize="12sp" android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Version footer -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Group DIAS · COMP 3059 Capstone · v1.0"
+                android:textSize="12sp"
+                android:textColor="@color/gray_medium"
+                android:gravity="center"
+                android:layout_marginBottom="24dp" />
+
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
