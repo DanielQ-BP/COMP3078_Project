@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.databinding.FragmentHomeBinding
 
@@ -34,6 +35,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -41,6 +43,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var listingRepository: ListingRepository
+    private lateinit var authPreferences: AuthPreferences
 
     // If not using DI, you would need to instantiate or provide it here.
 
@@ -68,6 +71,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val apiService = retrofit.create(ApiService::class.java)
 
         listingRepository = ListingRepository(apiService, listingDao)
+        authPreferences = AuthPreferences(context)
     }
 
 
@@ -120,7 +124,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
             // Perform search
             lifecycleScope.launch {
-                val results = listingRepository.searchListings(address, maxPrice)
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    Toast.makeText(requireContext(), "Please login to search listings", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val results = listingRepository.searchListings(userId, address, maxPrice)
 
                 if (results.isEmpty()) {
                     Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
@@ -163,7 +173,14 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private fun loadAllListings() {
         lifecycleScope.launch {
-            val listings = listingRepository.getAllListings()
+            val userId = authPreferences.userId.first()
+            if (userId == null) {
+                Toast.makeText(requireContext(), "Please login to view listings", Toast.LENGTH_SHORT).show()
+                updateListings(emptyList())
+                return@launch
+            }
+
+            val listings = listingRepository.getAllListings(userId)
             updateListings(listings)
         }
     }

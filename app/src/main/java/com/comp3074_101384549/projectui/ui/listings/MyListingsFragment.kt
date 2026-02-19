@@ -15,9 +15,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.repository.ListingRepository
 import com.comp3074_101384549.projectui.ui.adapter.ListingAdapter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -26,6 +28,7 @@ class MyListingsFragment : Fragment() {
 
     private lateinit var listingRepository: ListingRepository
     private lateinit var listingAdapter: ListingAdapter
+    private lateinit var authPreferences: AuthPreferences
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -40,6 +43,7 @@ class MyListingsFragment : Fragment() {
 
         val apiService = retrofit.create(ApiService::class.java)
         listingRepository = ListingRepository(apiService, listingDao)
+        authPreferences = AuthPreferences(context)
     }
 
     override fun onCreateView(
@@ -96,7 +100,13 @@ class MyListingsFragment : Fragment() {
     private fun deleteAllListings() {
         lifecycleScope.launch {
             try {
-                listingRepository.deleteAllListings()
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    Toast.makeText(requireContext(), "Please login to delete listings", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                listingRepository.deleteAllListings(userId)
                 Toast.makeText(requireContext(), "All listings deleted", Toast.LENGTH_SHORT).show()
                 // Reload the list (will be empty)
                 loadListings()
@@ -115,8 +125,16 @@ class MyListingsFragment : Fragment() {
     private fun loadListings() {
         // FIX: Wrap the suspending function call in a coroutine scope
         lifecycleScope.launch {
+            // Get current user ID
+            val userId = authPreferences.userId.first()
+            if (userId == null) {
+                Toast.makeText(requireContext(), "Please login to view your listings", Toast.LENGTH_SHORT).show()
+                listingAdapter.updateListings(emptyList())
+                return@launch
+            }
+
             // Call the suspend function to fetch data from the repository (Room/DB)
-            val listings = listingRepository.getAllListings()
+            val listings = listingRepository.getAllListings(userId)
             // Update the adapter with the new data
             listingAdapter.updateListings(listings)
         }

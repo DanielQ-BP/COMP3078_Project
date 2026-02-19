@@ -17,6 +17,7 @@ import com.comp3074_101384549.projectui.ui.payment.PaymentFragment
 import com.comp3074_101384549.projectui.ui.profile.ProfileFragment
 import com.comp3074_101384549.projectui.ui.reservations.ReservedListingsFragment
 import com.comp3074_101384549.projectui.ui.settings.SettingsFragment
+import com.comp3074_101384549.projectui.ui.support.SupportFragment
 import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
@@ -124,11 +125,7 @@ class HomeActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_help -> {
-                    Toast.makeText(
-                        this,
-                        "Support / help screen not implemented yet (prototype).",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    openFragment(SupportFragment())
                     binding.drawerLayout.closeDrawers()
                     true
                 }

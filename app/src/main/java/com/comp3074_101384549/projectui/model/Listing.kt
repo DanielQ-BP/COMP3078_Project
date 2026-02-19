@@ -8,7 +8,8 @@ data class Listing(
     val isActive: Boolean,
     val latitude: Double,
     val longitude: Double,
-    val address: String
+    val address: String,
+    val userId: String // Owner of the listing
 ){
     fun toListingEntity(): ListingEntity {
         return ListingEntity(
@@ -19,7 +20,8 @@ data class Listing(
             description = this.description,
             isActive = this.isActive,
             latitude = this.latitude,
-            longitude = this.longitude
+            longitude = this.longitude,
+            userId = this.userId
             )
     }
 }

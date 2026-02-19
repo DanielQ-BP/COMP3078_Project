@@ -10,7 +10,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.databinding.FragmentProfileBinding
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class ProfileFragment : Fragment() {
 
@@ -19,11 +24,11 @@ class ProfileFragment : Fragment() {
 
     // SharedPreferences keys
     private val PREFS_NAME = "ParkSpotPrefs"
-    private val KEY_USERNAME = "username"
     private val KEY_PROFILE_IMAGE_URI = "profile_image_uri"
+    private val KEY_MEMBER_SINCE = "member_since"
 
     private lateinit var prefs: SharedPreferences
-
+    private lateinit var authPreferences: AuthPreferences
 
     // Store selected image URI (current session)
     private var selectedImageUri: Uri? = null
@@ -41,8 +46,9 @@ class ProfileFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        // Initialize SharedPreferences once
+        // Initialize SharedPreferences and AuthPreferences
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        authPreferences = AuthPreferences(context)
     }
 
     override fun onCreateView(
@@ -56,15 +62,15 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Load profile text + image
+        // Load profile data
         loadProfile()
         loadProfileImage()
+        loadUserStats()
 
         // By default, Change Photo button is hidden (only visible in edit mode)
         binding.btnChangePhoto.visibility = View.GONE
 
         // Change photo: open gallery
-
         binding.btnChangePhoto.setOnClickListener {
             pickImageLauncher.launch("image/*")
         }
@@ -73,32 +79,25 @@ class ProfileFragment : Fragment() {
             binding.readOnlyContainer.visibility = View.GONE
             binding.editContainer.visibility = View.VISIBLE
             binding.editProfileButton.visibility = View.GONE
-
-            // Now allow changing the photo as well
-
             binding.btnChangePhoto.visibility = View.VISIBLE
         }
 
         binding.saveButton.setOnClickListener {
-            val newName = binding.nameEditText.text.toString().trim()
-            val newAgeStr = binding.ageEditText.text.toString().trim()
-            val newDesc = binding.descriptionEditText.text.toString().trim()
+            val newBio = binding.bioEditText.text.toString().trim()
+            val newPhone = binding.phoneEditText.text.toString().trim()
 
-            if (newName.isEmpty() || newAgeStr.isEmpty() || newDesc.isEmpty()) {
+            if (newBio.isEmpty()) {
                 Toast.makeText(
                     requireContext(),
-                    "Please fill all fields",
+                    "Please enter a bio",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
             }
 
-            val newAge = newAgeStr.toIntOrNull() ?: 0
-
             with(prefs.edit()) {
-                putString(KEY_USERNAME, newName)
-                putInt("age", newAge)
-                putString("description", newDesc)
+                putString("bio", newBio)
+                putString("phone", newPhone)
                 apply()
             }
 
@@ -107,34 +106,67 @@ class ProfileFragment : Fragment() {
             binding.editProfileButton.visibility = View.VISIBLE
             binding.btnChangePhoto.visibility = View.GONE
 
-            // Hide photo change button when leaving edit mode
-            binding.btnChangePhoto.visibility = View.GONE
-
             loadProfile()
 
             Toast.makeText(
                 requireContext(),
-                "Profile saved (Prototype)",
+                "Profile updated",
                 Toast.LENGTH_SHORT
             ).show()
         }
     }
 
     private fun loadProfile() {
-        val username = prefs.getString(KEY_USERNAME, "John Doe") ?: "John Doe"
-        val age = prefs.getInt("age", 0)
-        val desc = prefs.getString("description", "") ?: ""
+        lifecycleScope.launch {
+            // Get username and email from AuthPreferences (persists from login)
+            val username = authPreferences.username.first() ?: "User"
+            val email = authPreferences.email.first() ?: ""
 
-        binding.usernameTextView.text = username
+            // Get additional profile info from SharedPreferences
+            val bio = prefs.getString("bio", "") ?: ""
+            val phone = prefs.getString("phone", "") ?: ""
+            var memberSince = prefs.getString(KEY_MEMBER_SINCE, null)
 
-        binding.nameReadOnly.text = "Name: $username"
-        binding.ageReadOnly.text = "Age: ${if (age == 0) "–" else age}"
-        binding.descriptionReadOnly.text =
-            "Description: ${if (desc.isEmpty()) "–" else desc}"
+            // Set member since date if not set (first time loading)
+            if (memberSince == null) {
+                val currentDate = java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault())
+                    .format(java.util.Date())
+                prefs.edit().putString(KEY_MEMBER_SINCE, currentDate).apply()
+                memberSince = currentDate
+            }
 
-        binding.nameEditText.setText(username)
-        binding.ageEditText.setText(if (age > 0) age.toString() else "")
-        binding.descriptionEditText.setText(desc)
+            // Update UI
+            binding.usernameTextView.text = username
+            binding.emailTextView.text = email.ifEmpty { "No email provided" }
+            binding.bioReadOnly.text = bio.ifEmpty { "No bio yet. Click Edit Profile to add one." }
+            binding.phoneReadOnly.text = phone.ifEmpty { "Not provided" }
+            binding.memberSinceTextView.text = "Member since $memberSince"
+
+            // Set edit fields
+            binding.bioEditText.setText(bio)
+            binding.phoneEditText.setText(phone)
+        }
+    }
+
+    private fun loadUserStats() {
+        lifecycleScope.launch {
+            val userId = authPreferences.userId.first()
+            if (userId != null) {
+                val db = AppDatabase.getDatabase(requireContext())
+                val listingDao = db.listingDao()
+                
+                // Count user's listings
+                val listings = listingDao.getAllListings(userId).first()
+                val totalListings = listings.size
+                val activeListings = listings.count { it.isActive }
+
+                binding.totalListingsTextView.text = totalListings.toString()
+                binding.activeListingsTextView.text = activeListings.toString()
+            } else {
+                binding.totalListingsTextView.text = "0"
+                binding.activeListingsTextView.text = "0"
+            }
+        }
     }
 
     private fun saveProfileImageUri(uri: Uri) {
@@ -157,6 +189,13 @@ class ProfileFragment : Fragment() {
             }
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh profile data when returning to this fragment
+        loadProfile()
+        loadUserStats()
     }
 
     override fun onDestroyView() {

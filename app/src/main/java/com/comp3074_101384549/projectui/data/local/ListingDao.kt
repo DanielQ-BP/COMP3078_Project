@@ -13,11 +13,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ListingDao {
 
-    @Query("SELECT * FROM listings ORDER BY price_hour ASC")
-    fun getAllListings(): Flow<List<ListingEntity>>
+    @Query("SELECT * FROM listings WHERE user_id = :userId ORDER BY price_hour ASC")
+    fun getAllListings(userId: String): Flow<List<ListingEntity>>
 
-    @Query("SELECT * FROM listings WHERE address LIKE :query OR description LIKE :query OR availability LIKE :query ORDER BY price_hour ASC")
-    fun searchListings(query: String): Flow<List<ListingEntity>>
+    @Query("SELECT * FROM listings WHERE user_id = :userId AND (address LIKE :query OR description LIKE :query OR availability LIKE :query) ORDER BY price_hour ASC")
+    fun searchListings(userId: String, query: String): Flow<List<ListingEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(listings: List<ListingEntity>)
@@ -28,6 +28,9 @@ interface ListingDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE) // <-- NEW FUNCTION ADDED
     suspend fun insert(listing: ListingEntity)
+
+    @Query("DELETE FROM listings WHERE user_id = :userId")
+    suspend fun deleteAllByUserId(userId: String)
 
     @Query("DELETE FROM listings")
     suspend fun deleteAll()

@@ -9,7 +9,7 @@ import com.comp3074_101384549.projectui.model.ListingEntity
  */
 @Database(
     entities = [ListingEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -26,7 +26,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "parkspot_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() // For development: clears old data when schema changes
+                .build()
                 INSTANCE = instance
                 instance
             }

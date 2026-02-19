@@ -7,17 +7,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
-import android.widget.Switch
 import android.widget.Toast
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.textfield.TextInputEditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.repository.ListingRepository
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.utils.MapUtils
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -26,6 +28,7 @@ import java.util.UUID
 class CreateListingFragment : Fragment() {
 
     private lateinit var listingRepository: ListingRepository
+    private lateinit var authPreferences: AuthPreferences
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -40,6 +43,7 @@ class CreateListingFragment : Fragment() {
 
         val apiService = retrofit.create(ApiService::class.java)
         listingRepository = ListingRepository(apiService, listingDao)
+        authPreferences = AuthPreferences(context)
     }
 
     override fun onCreateView(
@@ -52,12 +56,19 @@ class CreateListingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val address = view.findViewById<EditText>(R.id.editTextAddress)
-        val price = view.findViewById<EditText>(R.id.editTextPrice)
-        val availability = view.findViewById<EditText>(R.id.editTextAvailability)
-        val timeWindow = view.findViewById<EditText>(R.id.editTextTimeWindow)
-        val description = view.findViewById<EditText>(R.id.editTextDescription)
+        val address = view.findViewById<TextInputEditText>(R.id.editTextAddress)
+        val price = view.findViewById<TextInputEditText>(R.id.editTextPrice)
+        val availability = view.findViewById<TextInputEditText>(R.id.editTextAvailability)
+        val timeWindow = view.findViewById<TextInputEditText>(R.id.editTextTimeWindow)
+        val description = view.findViewById<TextInputEditText>(R.id.editTextDescription)
+        val activeSwitch = view.findViewById<SwitchMaterial>(R.id.switchActive)
         val createButton = view.findViewById<Button>(R.id.buttonCreateListing)
+        val cancelButton = view.findViewById<Button>(R.id.buttonCancel)
+
+        // Cancel button handler
+        cancelButton.setOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
 
         createButton.setOnClickListener {
 
@@ -76,6 +87,13 @@ class CreateListingFragment : Fragment() {
             // FIX: Launch a coroutine to call the suspending function
             lifecycleScope.launch {
                 try {
+                    // Get current user ID
+                    val userId = authPreferences.userId.first()
+                    if (userId == null) {
+                        Toast.makeText(requireContext(), "Please login to create a listing", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+
                     // Geocode the address to get latitude/longitude
                     val latLng = try {
                         MapUtils.getLatLngFromAddress(requireContext(), addr)
@@ -93,10 +111,11 @@ class CreateListingFragment : Fragment() {
                         pricePerHour = priceValue,
                         availability = avail,
                         description = desc,
-                        isActive = true, // Default to active when created
+                        isActive = activeSwitch.isChecked, // Use switch value
                         latitude = latLng?.latitude ?: 43.6532, // Default to Toronto if geocoding fails
                         longitude = latLng?.longitude ?: -79.3832,
                         address = addr,
+                        userId = userId // Associate listing with current user
                     )
 
                     // Call the new suspending function
