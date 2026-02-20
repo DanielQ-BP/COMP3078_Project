@@ -94,6 +94,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             // When a listing is clicked, navigate to details fragment
             val detailsFragment = ListingDetailsFragment().apply {
                 arguments = bundleOf(
+                    "listingId" to listing.id,
                     "address" to listing.address,
                     "price" to listing.pricePerHour,
                     "availability" to listing.availability,
@@ -123,22 +124,33 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             val maxPrice = maxPriceInput.text.toString().toDoubleOrNull()
 
             // Perform search
-            lifecycleScope.launch {
-                val userId = authPreferences.userId.first()
-                if (userId == null) {
-                    Toast.makeText(requireContext(), "Please login to search listings", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    if (!isAdded) return@launch
 
-                val results = listingRepository.searchListings(userId, address, maxPrice)
+                    val userId = authPreferences.userId.first()
+                    if (userId == null) {
+                        if (isAdded) {
+                            Toast.makeText(requireContext(), "Please login to search listings", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
 
-                if (results.isEmpty()) {
-                    Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
-                    updateListings(emptyList())
-                } else {
-                    Toast.makeText(requireContext(), "Found ${results.size} parking spot(s)", Toast.LENGTH_SHORT).show()
-                    updateListings(results)
+                    val results = listingRepository.searchListings(userId, address, maxPrice)
 
+                    if (!isAdded) return@launch
+
+                    if (results.isEmpty()) {
+                        Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
+                        updateListings(emptyList())
+                    } else {
+                        Toast.makeText(requireContext(), "Found ${results.size} parking spot(s)", Toast.LENGTH_SHORT).show()
+                        updateListings(results)
+                    }
+                } catch (e: Exception) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Error searching listings", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -172,29 +184,55 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun loadAllListings() {
-        lifecycleScope.launch {
-            val userId = authPreferences.userId.first()
-            if (userId == null) {
-                Toast.makeText(requireContext(), "Please login to view listings", Toast.LENGTH_SHORT).show()
-                updateListings(emptyList())
-                return@launch
-            }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
 
-            val listings = listingRepository.getAllListings(userId)
-            updateListings(listings)
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Please login to view listings", Toast.LENGTH_SHORT).show()
+                    }
+                    updateListings(emptyList())
+                    return@launch
+                }
+
+                val listings = listingRepository.getAllListings(userId)
+                if (isAdded) {
+                    updateListings(listings)
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error loading listings", Toast.LENGTH_SHORT).show()
+                    updateListings(emptyList())
+                }
+            }
         }
     }
 
     private fun updateListings(listings: List<Listing>) {
+        if (!isAdded) return
+
+        // Show/hide empty state
+        val emptyState = view?.findViewById<View>(R.id.emptyState)
+        val recyclerView = view?.findViewById<View>(R.id.listViewListings)
+        if (listings.isEmpty()) {
+            emptyState?.visibility = View.VISIBLE
+            recyclerView?.visibility = View.GONE
+        } else {
+            emptyState?.visibility = View.GONE
+            recyclerView?.visibility = View.VISIBLE
+        }
+
         // Update RecyclerView
         listingAdapter.updateListings(listings)
 
         // Update markers on the map
         googleMap?.let { map ->
             map.clear()
+            val ctx = context ?: return@let
             listings.forEach { listing ->
-                val latLng =
-                    MapUtils.getLatLngFromAddress(requireContext(), listing.address)
+                val latLng = MapUtils.getLatLngFromAddress(ctx, listing.address)
                 latLng?.let {
                     MapUtils.addMarker(
                         map,
@@ -206,8 +244,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             }
 
             if (listings.isNotEmpty()) {
-                val firstLocation =
-                    MapUtils.getLatLngFromAddress(requireContext(), listings[0].address)
+                val firstLocation = MapUtils.getLatLngFromAddress(ctx, listings[0].address)
                 firstLocation?.let {
                     MapUtils.moveCameraToPosition(map, it, 12f)
                 }

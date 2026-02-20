@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground"
@@ -14,7 +13,7 @@
         android:padding="16dp">
 
         <!-- Header Card -->
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
@@ -32,14 +31,14 @@
                 <ImageView
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:src="@android:drawable/ic_menu_add"
+                    android:src="@android:drawable/ic_menu_edit"
                     app:tint="@color/white"
                     android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Create New Listing"
+                    android:text="Edit Listing"
                     android:textSize="24sp"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
@@ -47,13 +46,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Share your parking spot with others"
+                    android:text="Update your parking spot details"
                     android:textSize="14sp"
                     android:textColor="@color/white"
                     android:alpha="0.9"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Form Card -->
         <com.google.android.material.card.MaterialCardView
@@ -85,8 +84,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Address"
-                        android:inputType="textPostalAddress"
-                        android:minLines="1" />
+                        android:inputType="textPostalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Price Field -->
@@ -124,25 +122,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Availability (e.g., Mon-Fri, 9am-5pm)"
-                        android:inputType="text" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Time Window Field -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxStrokeColor="@color/parkspot_green"
-                    app:hintTextColor="@color/parkspot_green"
-                    app:startIconDrawable="@android:drawable/ic_menu_recent_history"
-                    app:startIconTint="@color/parkspot_green">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextTimeWindow"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Time Window (e.g., 2 hours minimum)"
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -205,8 +184,8 @@
 
         <!-- Action Buttons -->
         <Button
-            android:id="@+id/buttonCreateListing"
-            android:text="Create Listing"
+            android:id="@+id/buttonSave"
+            android:text="Save Changes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"

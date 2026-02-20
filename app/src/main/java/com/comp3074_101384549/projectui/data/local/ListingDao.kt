@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.comp3074_101384549.projectui.model.ListingEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -34,4 +35,13 @@ interface ListingDao {
 
     @Query("DELETE FROM listings")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM listings WHERE id = :listingId")
+    suspend fun getListingById(listingId: String): ListingEntity?
+
+    @Update
+    suspend fun update(listing: ListingEntity)
+
+    @Query("DELETE FROM listings WHERE id = :listingId")
+    suspend fun deleteById(listingId: String)
 }
