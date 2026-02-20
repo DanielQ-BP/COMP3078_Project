@@ -80,4 +80,36 @@ class ListingRepository @Inject constructor(
         listingDao.deleteAllByUserId(userId)
     }
 
+    /**
+     * Gets a single listing by ID.
+     */
+    suspend fun getListingById(listingId: String): Listing? {
+        val entity = listingDao.getListingById(listingId) ?: return null
+        return Listing(
+            id = entity.id,
+            address = entity.address,
+            pricePerHour = entity.pricePerHour,
+            availability = entity.availability,
+            description = entity.description,
+            isActive = entity.isActive,
+            latitude = entity.latitude,
+            longitude = entity.longitude,
+            userId = entity.userId
+        )
+    }
+
+    /**
+     * Updates an existing listing.
+     */
+    suspend fun updateListing(listing: Listing) {
+        listingDao.update(listing.toListingEntity())
+    }
+
+    /**
+     * Deletes a single listing by ID.
+     */
+    suspend fun deleteListing(listingId: String) {
+        listingDao.deleteById(listingId)
+    }
 }
+

@@ -67,7 +67,15 @@ class CreateListingFragment : Fragment() {
 
         // Cancel button handler
         cancelButton.setOnClickListener {
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            // Navigate back to Home fragment
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, com.comp3074_101384549.projectui.ui.home.HomeFragment())
+                .commit()
+
+            // Update bottom nav selection
+            (activity as? com.comp3074_101384549.projectui.HomeActivity)?.let { homeActivity ->
+                homeActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)?.selectedItemId = R.id.homeFragment
+            }
         }
 
         createButton.setOnClickListener {
@@ -85,18 +93,23 @@ class CreateListingFragment : Fragment() {
             }
 
             // FIX: Launch a coroutine to call the suspending function
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 try {
+                    if (!isAdded) return@launch
+
                     // Get current user ID
                     val userId = authPreferences.userId.first()
                     if (userId == null) {
-                        Toast.makeText(requireContext(), "Please login to create a listing", Toast.LENGTH_SHORT).show()
+                        if (isAdded) {
+                            Toast.makeText(requireContext(), "Please login to create a listing", Toast.LENGTH_SHORT).show()
+                        }
                         return@launch
                     }
 
                     // Geocode the address to get latitude/longitude
+                    val ctx = context ?: return@launch
                     val latLng = try {
-                        MapUtils.getLatLngFromAddress(requireContext(), addr)
+                        MapUtils.getLatLngFromAddress(ctx, addr)
                     } catch (e: Exception) {
                         Log.e("CreateListingFragment", "Geocoding failed: $e", e)
                         null
@@ -121,18 +134,31 @@ class CreateListingFragment : Fragment() {
                     // Call the new suspending function
                     listingRepository.saveNewListing(newListing)
 
+                    if (!isAdded) return@launch
+
                     val message = if (latLng != null) {
                         "Listing created!"
                     } else {
                         "Listing created (location may not be accurate)"
                     }
                     Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
+
+                    // Navigate back to Home fragment
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.homeFragmentContainer, com.comp3074_101384549.projectui.ui.home.HomeFragment())
+                        .commit()
+
+                    // Update bottom nav selection
+                    (activity as? com.comp3074_101384549.projectui.HomeActivity)?.let { homeActivity ->
+                        homeActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)?.selectedItemId = R.id.homeFragment
+                    }
 
                 } catch (e: Exception) {
                     // Handle API/DB errors gracefully
                     Log.e("CreateListingFragment", "Error creating listing: $e", e)
-                    Toast.makeText(requireContext(), "Failed to create listing: ${e.message}", Toast.LENGTH_LONG).show()
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Failed to create listing: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
