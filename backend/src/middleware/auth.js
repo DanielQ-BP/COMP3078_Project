@@ -20,8 +20,9 @@ const authenticateToken = (req, res, next) => {
 };
 
 const generateToken = (user) => {
+    const role = user.role || 'user';
     return jwt.sign(
-        { id: user.id, username: user.username, email: user.email },
+        { id: user.id, username: user.username, email: user.email, role },
         JWT_SECRET,
         { expiresIn: '7d' }
     );

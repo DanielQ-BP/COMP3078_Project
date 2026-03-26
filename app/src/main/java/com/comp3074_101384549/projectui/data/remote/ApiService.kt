@@ -1,6 +1,7 @@
 package com.comp3074_101384549.projectui.data.remote
 
 
+import com.comp3074_101384549.projectui.model.AdminLoginRequest
 import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.model.User
 import retrofit2.http.GET
@@ -20,6 +21,9 @@ interface ApiService {
     // Login endpoint (returns a token string)
     @POST("auth/login")
     suspend fun login(@Body user: User): String
+
+    @POST("auth/admin/login")
+    suspend fun adminLogin(@Body body: AdminLoginRequest): String
 
     // Fetch all listings
     @GET("listings/all")
