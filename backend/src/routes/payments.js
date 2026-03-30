@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const router = express.Router();
 
@@ -79,5 +80,29 @@ router.get('/:id', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch payment' });
     }
 });
+
+// POST /payments/create-payment-intent - Create Stripe PaymentIntent
+router.post('/create-payment-intent',  async (req, res) => {
+    const { amount, currency } = req.body;
+
+    if (!amount || !currency) {
+        return res.status(400).json({ error: 'Amount and currency are required.' });
+    }
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount,
+            currency,
+            automatic_payment_methods: { enabled: true },
+        });
+
+        res.json({ clientSecret: paymentIntent.client_secret });
+
+    } catch (err) {
+        console.error('Stripe error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 module.exports = router;

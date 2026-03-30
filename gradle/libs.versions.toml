@@ -20,11 +20,11 @@ navigationUiKtxVersion = "2.9.5"
 navigationFragment = "2.9.5"
 
 # NEW PERSISTENCE, NETWORKING, AND DI VERSIONS
-room = "2.6.1"
+room = "2.7.0"
 datastore = "1.1.1"
 retrofit = "2.9.0"
 okhttp = "4.12.0"
-hilt = "2.50"
+hilt = "2.56"
 
 [libraries]
 # Existing Libraries
