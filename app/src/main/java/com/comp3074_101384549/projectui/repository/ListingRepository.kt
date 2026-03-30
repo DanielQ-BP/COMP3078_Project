@@ -23,29 +23,30 @@ class ListingRepository @Inject constructor(
                 description = entity.description,
                 isActive = entity.isActive,
                 latitude = entity.latitude,
-                longitude = entity.longitude
+                longitude = entity.longitude,
+                userId = entity.userId
             )
         }
     }
 
     /**
-     * Replaces the old synchronous getAllListings() by fetching all data from the local Room database.
+     * Fetches all listings for a specific user from the local Room database.
      * NOTE: Must be called from a coroutine scope (e.g., lifecycleScope.launch).
      */
-    suspend fun getAllListings(): List<Listing> {
+    suspend fun getAllListings(userId: String): List<Listing> {
         // Collects the latest list of entities from the DAO Flow and converts it to a simple List.
-        return listingDao.getAllListings().first().toListingList()
+        return listingDao.getAllListings(userId).first().toListingList()
     }
 
     /**
-     * Replaces the old synchronous searchListings() by searching the local Room database.
+     * Searches listings for a specific user in the local Room database.
      * NOTE: Must be called from a coroutine scope (e.g., lifecycleScope.launch).
      */
-    suspend fun searchListings(address: String = "", maxPrice: Double? = null): List<Listing> {
+    suspend fun searchListings(userId: String, address: String = "", maxPrice: Double? = null): List<Listing> {
 
-        // 1. Get filtered data from the DAO (filters by address/description/availability)
+        // 1. Get filtered data from the DAO (filters by address/description/availability and userId)
         val addressQuery = if (address.isBlank()) "%" else "%$address%"
-        val allMatchingEntities = listingDao.searchListings(addressQuery).first()
+        val allMatchingEntities = listingDao.searchListings(userId, addressQuery).first()
 
         // 2. Convert to Listing model
         var results = allMatchingEntities.toListingList()
@@ -58,14 +59,57 @@ class ListingRepository @Inject constructor(
         return results
     }
     /**
-     * Replaces the old synchronous addListing() by persisting the new listing locally
-     * and sending it to the remote API.
+     * Persists a new listing locally and sends it to the remote API.
      */
     suspend fun saveNewListing(listing: Listing) {
         // 1. Save to local database (cache)
         listingDao.insert(listing.toListingEntity())
 
-        // 2. Send to remote API
-        apiService.createListing(listing)
+        // 2. Try to send to remote API (ignore errors for now since API is not set up)
+        try {
+            apiService.createListing(listing)
+        } catch (e: Exception) {
+            // Silently ignore API errors - listing is already saved locally
+        }
+    }
+
+    /**
+     * Deletes all listings for a specific user from the local database.
+     */
+    suspend fun deleteAllListings(userId: String) {
+        listingDao.deleteAllByUserId(userId)
+    }
+
+    /**
+     * Gets a single listing by ID.
+     */
+    suspend fun getListingById(listingId: String): Listing? {
+        val entity = listingDao.getListingById(listingId) ?: return null
+        return Listing(
+            id = entity.id,
+            address = entity.address,
+            pricePerHour = entity.pricePerHour,
+            availability = entity.availability,
+            description = entity.description,
+            isActive = entity.isActive,
+            latitude = entity.latitude,
+            longitude = entity.longitude,
+            userId = entity.userId
+        )
+    }
+
+    /**
+     * Updates an existing listing.
+     */
+    suspend fun updateListing(listing: Listing) {
+        listingDao.update(listing.toListingEntity())
+    }
+
+    /**
+     * Deletes a single listing by ID.
+     */
+    suspend fun deleteListing(listingId: String) {
+        listingDao.deleteById(listingId)
     }
 }
+

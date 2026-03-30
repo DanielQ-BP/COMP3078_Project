@@ -41,10 +41,7 @@ class ThemeFragment : Fragment() {
 
         binding.btnApplyTheme.setOnClickListener {
             val selectedId = binding.themeRadioGroup.checkedRadioButtonId
-            val newMode = when (selectedId) {
-                binding.rbDark.id -> "dark"
-                else -> "light"
-            }
+            val newMode = if (selectedId == binding.rbDark.id) "dark" else "light"
 
             prefs.edit().putString(KEY_THEME_MODE, newMode).apply()
 

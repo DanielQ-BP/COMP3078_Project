@@ -17,6 +17,7 @@ data class ListingEntity(
     @ColumnInfo(name = "description") val description: String,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "latitude") val latitude: Double,
-    @ColumnInfo(name = "longitude") val longitude: Double
+    @ColumnInfo(name = "longitude") val longitude: Double,
+    @ColumnInfo(name = "user_id") val userId: String // Owner of the listing
 
 )

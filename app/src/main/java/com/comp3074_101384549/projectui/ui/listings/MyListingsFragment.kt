@@ -1,28 +1,55 @@
 package com.comp3074_101384549.projectui.ui.listings
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.lifecycle.lifecycleScope // <-- IMPORTANT: Add this import
 import com.comp3074_101384549.projectui.R
+import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
+import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.repository.ListingRepository
-import com.comp3074_101384549.projectui.ui.adapter.ListingAdapter
-import kotlinx.coroutines.launch // <-- IMPORTANT: Add this import
-import javax.inject.Inject // Assuming Dependency Injection (DI)
+import com.comp3074_101384549.projectui.ui.adapter.MyListingAdapter
+import com.comp3074_101384549.projectui.model.Listing
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MyListingsFragment : Fragment() {
 
-    // --- Dependency Injection Placeholder ---
-    // You need a valid instance of the repository to call its functions.
-    @Inject
-    lateinit var listingRepository: ListingRepository
+    private lateinit var listingRepository: ListingRepository
+    private lateinit var listingAdapter: MyListingAdapter
+    private lateinit var authPreferences: AuthPreferences
 
-    // You might also want to hold a reference to the adapter
-    private lateinit var listingAdapter: ListingAdapter
+    private var emptyState: View? = null
+    private var recyclerView: RecyclerView? = null
+    private var deleteAllButton: Button? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        val db = AppDatabase.getDatabase(context)
+        val listingDao = db.listingDao()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://example.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val apiService = retrofit.create(ApiService::class.java)
+        listingRepository = ListingRepository(apiService, listingDao)
+        authPreferences = AuthPreferences(context)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,30 +61,160 @@ class MyListingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerViewListings)
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        emptyState = view.findViewById(R.id.emptyState)
+        recyclerView = view.findViewById(R.id.recyclerViewListings)
+        deleteAllButton = view.findViewById(R.id.buttonDeleteAll)
 
-        // Initialize adapter with an empty list initially
-        listingAdapter = ListingAdapter(emptyList())
-        recyclerView.adapter = listingAdapter
+        recyclerView?.layoutManager = LinearLayoutManager(requireContext())
+
+        // Initialize adapter with edit/delete callbacks
+        listingAdapter = MyListingAdapter(
+            listings = emptyList(),
+            onEditClick = { listing -> onEditListing(listing) },
+            onDeleteClick = { listing -> showDeleteConfirmation(listing) }
+        )
+        recyclerView?.adapter = listingAdapter
+
+        // Delete All button
+        deleteAllButton?.setOnClickListener {
+            showDeleteAllConfirmationDialog()
+        }
+
+        // Create First Listing button (in empty state)
+        view.findViewById<Button>(R.id.buttonCreateFirst)?.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, CreateListingFragment())
+                .addToBackStack(null)
+                .commit()
+        }
 
         // Load data immediately
         loadListings()
     }
 
+    private fun showEmptyState(show: Boolean) {
+        emptyState?.visibility = if (show) View.VISIBLE else View.GONE
+        recyclerView?.visibility = if (show) View.GONE else View.VISIBLE
+        deleteAllButton?.visibility = if (show) View.GONE else View.VISIBLE
+    }
+
+    private fun onEditListing(listing: Listing) {
+        val editFragment = EditListingFragment().apply {
+            arguments = bundleOf(
+                "listingId" to listing.id,
+                "address" to listing.address,
+                "price" to listing.pricePerHour,
+                "availability" to listing.availability,
+                "description" to listing.description,
+                "isActive" to listing.isActive,
+                "latitude" to listing.latitude,
+                "longitude" to listing.longitude
+            )
+        }
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.homeFragmentContainer, editFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun showDeleteConfirmation(listing: Listing) {
+        if (!isAdded) return
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Listing")
+            .setMessage("Are you sure you want to delete this listing?\n\n${listing.address}")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteListing(listing)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteListing(listing: Listing) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                listingRepository.deleteListing(listing.id)
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Listing deleted", Toast.LENGTH_SHORT).show()
+                    loadListings()
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error deleting listing", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun showDeleteAllConfirmationDialog() {
+        if (!isAdded) return
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete All Listings")
+            .setMessage("Are you sure you want to delete ALL listings? This cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteAllListings()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteAllListings() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Please login to delete listings", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                listingRepository.deleteAllListings(userId)
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "All listings deleted", Toast.LENGTH_SHORT).show()
+                    loadListings()
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error deleting listings: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        // Reload data whenever the fragment is brought back into view
         loadListings()
     }
 
     private fun loadListings() {
-        // FIX: Wrap the suspending function call in a coroutine scope
-        lifecycleScope.launch {
-            // Call the suspend function to fetch data from the repository (Room/DB)
-            val listings = listingRepository.getAllListings()
-            // Update the adapter with the new data
-            listingAdapter.updateListings(listings)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Please login to view your listings", Toast.LENGTH_SHORT).show()
+                    }
+                    listingAdapter.updateListings(emptyList())
+                    showEmptyState(true)
+                    return@launch
+                }
+
+                val listings = listingRepository.getAllListings(userId)
+                if (isAdded) {
+                    listingAdapter.updateListings(listings)
+                    showEmptyState(listings.isEmpty())
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error loading listings", Toast.LENGTH_SHORT).show()
+                    listingAdapter.updateListings(emptyList())
+                    showEmptyState(true)
+                }
+            }
         }
     }
 }

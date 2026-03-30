@@ -20,6 +20,9 @@ class AuthPreferences(private val context: Context) {
     private object Keys {
         val AUTH_TOKEN = stringPreferencesKey("auth_token")
         val USER_ID = stringPreferencesKey("user_id")
+
+        val USERNAME = stringPreferencesKey("username")
+        val EMAIL = stringPreferencesKey("email")
     }
 
     val authToken: Flow<String?> = context.dataStore.data
@@ -28,10 +31,20 @@ class AuthPreferences(private val context: Context) {
     val userId: Flow<String?> = context.dataStore.data
         .map { preferences -> preferences[Keys.USER_ID] }
 
-    suspend fun saveAuthDetails(token: String, userId: String) {
+
+    val username: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.USERNAME] }
+
+    val email: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.EMAIL] }
+
+    // Updated to save username and email
+    suspend fun saveAuthDetails(token: String, userId: String, username: String, email: String) {
         context.dataStore.edit { preferences ->
             preferences[Keys.AUTH_TOKEN] = token
             preferences[Keys.USER_ID] = userId
+            preferences[Keys.USERNAME] = username
+            preferences[Keys.EMAIL] = email
         }
     }
 
@@ -40,4 +53,5 @@ class AuthPreferences(private val context: Context) {
             preferences.clear()
         }
     }
+
 }

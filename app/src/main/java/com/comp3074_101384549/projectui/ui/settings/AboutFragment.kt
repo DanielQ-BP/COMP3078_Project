@@ -23,37 +23,7 @@ class AboutFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val aboutInfo = """
-            ParkSpot is a mobile application designed to connect drivers with nearby
-            residents or businesses who have unused parking spaces.
-
-            The goal is to reduce the stress of circling for parking, unpredictable
-            costs, and inconsistent availability — especially in high-traffic areas.
-
-            With ParkSpot, drivers can:
-            • Search for nearby parking based on price, distance, and time  
-            • View listings with photos, directions, pricing, and availability  
-            • Reserve a spot safely and make a secure payment  
-            • Receive booking confirmation and reminders
-
-            Parking spot owners can:
-            • Create detailed listings  
-            • Set price, availability, and directions  
-            • Manage active or inactive listings  
-            • Earn passive income from unused parking spaces
-
-            This project was developed by Group 12:
-
-            • Israel Osunkoya
-            • Sara Mosquera Mayo  
-            • Daniel Quach  
-            • Andres Sanchez Alzate
-
-            © 2025 ParkSpot. All rights reserved.
-        """.trimIndent()
-
-        binding.aboutText.text = aboutInfo
+        // Layout is fully defined in XML
     }
 
     override fun onDestroyView() {

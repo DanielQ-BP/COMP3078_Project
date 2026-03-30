@@ -25,6 +25,7 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Themes card → ThemeFragment
         binding.themesCard.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.homeFragmentContainer, ThemeFragment())
@@ -32,13 +33,13 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
 
+        // About card → AboutFragment
         binding.aboutCard.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.homeFragmentContainer, AboutFragment())
                 .addToBackStack(null)
                 .commit()
         }
-
     }
 
     override fun onDestroyView() {

@@ -3,6 +3,7 @@ package com.comp3074_101384549.projectui
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.GravityCompat
@@ -17,6 +18,7 @@ import com.comp3074_101384549.projectui.ui.payment.PaymentFragment
 import com.comp3074_101384549.projectui.ui.profile.ProfileFragment
 import com.comp3074_101384549.projectui.ui.reservations.ReservedListingsFragment
 import com.comp3074_101384549.projectui.ui.settings.SettingsFragment
+import com.comp3074_101384549.projectui.ui.support.SupportFragment
 import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
@@ -28,21 +30,18 @@ class HomeActivity : AppCompatActivity() {
     private val KEY_THEME_MODE = "theme_mode"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // ✅ Apply saved theme before setting content view
+        // Apply saved theme before inflating
         applySavedTheme()
 
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Auth preferences
         authPreferences = AuthPreferences(applicationContext)
 
-        // Set up bottom navigation + drawer menu
         setupBottomNav()
         setupDrawerMenu()
 
-        // Show Home fragment the first time
         if (savedInstanceState == null) {
             openFragment(HomeFragment())
             binding.bottomNav.selectedItemId = R.id.homeFragment
@@ -113,7 +112,7 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
 
-                // ✅ NEW: Settings
+                // ⭐ Settings
                 R.id.nav_settings -> {
                     openFragment(SettingsFragment())
                     binding.drawerLayout.closeDrawers()
@@ -121,17 +120,13 @@ class HomeActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_logout -> {
-                    performLogout()
                     binding.drawerLayout.closeDrawers()
+                    showLogoutConfirmation()
                     true
                 }
 
                 R.id.nav_help -> {
-                    Toast.makeText(
-                        this,
-                        "Support / help screen not implemented yet (prototype).",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    openFragment(SupportFragment())
                     binding.drawerLayout.closeDrawers()
                     true
                 }
@@ -143,17 +138,35 @@ class HomeActivity : AppCompatActivity() {
 
     private fun openFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
+            )
             .replace(R.id.homeFragmentContainer, fragment)
             .commit()
+    }
+
+    private fun showLogoutConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setPositiveButton("Logout") { _, _ ->
+                performLogout()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun performLogout() {
         lifecycleScope.launch {
             authPreferences.clearAuthDetails()
 
+            Toast.makeText(this@HomeActivity, "Logged out successfully", Toast.LENGTH_SHORT).show()
+
             val intent = Intent(this@HomeActivity, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
             finish()
         }
     }

@@ -1,34 +1,39 @@
 package com.comp3074_101384549.projectui
 
 import android.content.Intent
+import android.content.Context
+
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.databinding.ActivityLoginBinding
+
 import com.comp3074_101384549.projectui.HomeActivity
 import com.comp3074_101384549.projectui.data.remote.ApiService
-import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var authPreferences: AuthPreferences
 
     // In a Hilt setup, this would be @Inject lateInit var
     private lateinit var apiService: ApiService
 
-    private lateinit var authPreferences: AuthPreferences // NEW FIELD
+    
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Note: You may need to create ActivityLoginBinding if it doesn't exist
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Manual initialization (replace with DI setup if using Hilt)
         authPreferences = AuthPreferences(applicationContext)
-        // apiService = // You would initialize your Retrofit service here
+
 
         binding.loginButton.setOnClickListener {
             val username = binding.usernameEditText.text.toString()
@@ -39,39 +44,39 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Start login coroutine (NEW)
-            lifecycleScope.launch {
-                try {
-                    // Simplified: Perform API login call (need actual impl of apiService)
 
-                    // --- DUMMY SUCCESS LOGIC FOR TESTING ---
-                    val token = "dummy_jwt_token_for_${username}"
-                    val dummyUserId = "user_${username.hashCode()}"
-                    // --- END DUMMY LOGIC ---
+            // Check against "MockUserDB"
+            val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
+            val storedPassword = sharedPrefs.getString("user_$username", null)
+            val storedEmail = sharedPrefs.getString("email_$username", "user@example.com")
 
+            if (storedPassword == password) {
+                // Login Success!
+                lifecycleScope.launch {
+                    // Save session details
+                    authPreferences.saveAuthDetails(
+                        token = "dummy_token_123",
+                        userId = username,
+                        username = username,
+                        email = storedEmail ?: ""
+                    )
 
-                    // 2. Save the token and ID on success (NEW)
-                    authPreferences.saveAuthDetails(token, dummyUserId)
+                    // Also update ProfileFragment's separate SharedPreferences so it shows up immediately
+                    val profilePrefs = getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE)
+                    with(profilePrefs.edit()) {
+                        putString("username", username)
+                        apply()
+                    }
 
-// ✅ Also save the username for the Profile screen
-                    val profilePrefs = getSharedPreferences("ParkSpotPrefs", MODE_PRIVATE)
-                    profilePrefs.edit()
-                        .putString("username", username)
-                        .apply()
-
-// 3. Navigate to the main application
-                    val intent = Intent(this@LoginActivity, HomeActivity::class.java)
-                    startActivity(intent)
+                    Toast.makeText(this@LoginActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
                     finish()
-
-                } catch (e: Exception) {
-                    Toast.makeText(this@LoginActivity, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
+            } else {
+                Toast.makeText(this, "Invalid Username or Password", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Note: I assume this button might be the 'Skip' button repurposed or a placeholder
-        // If your original activity was `MainActivity.kt`, this should navigate back.
         binding.logoutButton.setOnClickListener {
             finish()
         }
