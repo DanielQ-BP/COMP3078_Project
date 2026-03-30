@@ -92,4 +92,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     // Gson for parsing Directions API response
     implementation("com.google.code.gson:gson:2.10.1")
+    // Stripe
+    implementation("com.stripe:stripe-android:20.+")
+
 }
