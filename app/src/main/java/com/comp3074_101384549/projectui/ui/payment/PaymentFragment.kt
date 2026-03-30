@@ -1,89 +1,101 @@
 package com.comp3074_101384549.projectui.ui.payment
 
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.R
+import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.model.PaymentIntentRequest
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
+import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class PaymentFragment : Fragment() {
 
     private lateinit var paymentSheet: PaymentSheet
+    private lateinit var apiService: ApiService
+    private lateinit var payButton: Button
+    private lateinit var progressBar: ProgressBar
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:3000") // 🔁 Replace with your real backend URL
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        apiService = retrofit.create(ApiService::class.java)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_payment, container, false)
+        return inflater.inflate(R.layout.fragment_payment, container, false)
+    }
 
-        paymentSheet = PaymentSheet(this) { result ->
-            when (result) {
-                is PaymentSheetResult.Completed ->
-                    Toast.makeText(requireContext(), "Payment successful", Toast.LENGTH_SHORT).show()
-                is PaymentSheetResult.Canceled ->
-                    Toast.makeText(requireContext(), "Payment canceled", Toast.LENGTH_SHORT).show()
-                is PaymentSheetResult.Failed ->
-                    Toast.makeText(requireContext(), "Payment failed: ${result.error.message}", Toast.LENGTH_LONG).show()
-            }
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        val payButton = view.findViewById<Button>(R.id.payButton)
+        payButton = view.findViewById(R.id.payButton)
+        progressBar = view.findViewById(R.id.progressBar)
+
+        // Initialize PaymentSheet
+        paymentSheet = PaymentSheet(this, ::onPaymentSheetResult)
+
         payButton.setOnClickListener {
-            fetchClientSecretFromBackend()
+            startCheckout()
         }
-
-        return view
     }
 
-    private fun fetchClientSecretFromBackend() {
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url("http://10.0.2.2:4242/create-payment-intent")
-            .post("{}".toRequestBody("application/json".toMediaType()))
-            .build()
+    private fun startCheckout() {
+        payButton.isEnabled = false
+        progressBar.visibility = View.VISIBLE
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (!isAdded) return
-                requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Network error: ${e.message}", Toast.LENGTH_LONG).show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = apiService.createPaymentIntent(
+                    PaymentIntentRequest(amount = 1999, currency = "usd") // $19.99
+                )
+
+                val config = PaymentSheet.Configuration(
+                    merchantDisplayName = "ParkSpot"
+                )
+
+                paymentSheet.presentWithPaymentIntent(response.clientSecret, config)
+
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                if (isAdded) {
+                    payButton.isEnabled = true
+                    progressBar.visibility = View.GONE
                 }
             }
-
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string().orEmpty()
-
-                try {
-                    val clientSecret = JSONObject(body).getString("clientSecret")
-
-                    if (!isAdded) return
-                    requireActivity().runOnUiThread {
-                        presentPaymentSheet(clientSecret)
-                    }
-
-                } catch (e: Exception) {
-                    if (!isAdded) return
-                    requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Stripe error: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        })
+        }
     }
 
-    private fun presentPaymentSheet(clientSecret: String) {
-        val configuration = PaymentSheet.Configuration("ProjectUI")
-        paymentSheet.presentWithPaymentIntent(clientSecret, configuration)
+    private fun onPaymentSheetResult(result: PaymentSheetResult) {
+        if (!isAdded) return
+        when (result) {
+            is PaymentSheetResult.Completed ->
+                Toast.makeText(requireContext(), "✅ Payment successful!", Toast.LENGTH_LONG).show()
+            is PaymentSheetResult.Canceled ->
+                Toast.makeText(requireContext(), "Payment cancelled.", Toast.LENGTH_SHORT).show()
+            is PaymentSheetResult.Failed ->
+                Toast.makeText(requireContext(), "❌ Failed: ${result.error.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
     }
 }
