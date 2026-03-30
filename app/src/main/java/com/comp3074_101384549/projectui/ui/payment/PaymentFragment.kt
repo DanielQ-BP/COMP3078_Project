@@ -11,30 +11,30 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.R
-import com.comp3074_101384549.projectui.data.remote.ApiService
-import com.comp3074_101384549.projectui.model.PaymentIntentRequest
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class PaymentFragment : Fragment() {
 
     private lateinit var paymentSheet: PaymentSheet
-    private lateinit var apiService: ApiService
+    private lateinit var authPreferences: AuthPreferences
     private lateinit var payButton: Button
     private lateinit var progressBar: ProgressBar
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000") // 🔁 Replace with your real backend URL
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        apiService = retrofit.create(ApiService::class.java)
+        authPreferences = AuthPreferences(context)
     }
 
     override fun onCreateView(
@@ -50,7 +50,6 @@ class PaymentFragment : Fragment() {
         payButton = view.findViewById(R.id.payButton)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // Initialize PaymentSheet
         paymentSheet = PaymentSheet(this, ::onPaymentSheetResult)
 
         payButton.setOnClickListener {
@@ -64,15 +63,30 @@ class PaymentFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = apiService.createPaymentIntent(
-                    PaymentIntentRequest(amount = 1999, currency = "usd") // $19.99
-                )
+                val token = authPreferences.authToken.first() ?: ""
 
-                val config = PaymentSheet.Configuration(
-                    merchantDisplayName = "ParkSpot"
-                )
+                val clientSecret = withContext(Dispatchers.IO) {
+                    val client = OkHttpClient.Builder()
+                        .connectTimeout(30, TimeUnit.SECONDS)
+                        .readTimeout(30, TimeUnit.SECONDS)
+                        .build()
 
-                paymentSheet.presentWithPaymentIntent(response.clientSecret, config)
+                    val request = Request.Builder()
+                        .url("http://10.0.2.2:3000/payments/create-payment-intent")
+                        .addHeader("Authorization", "Bearer $token")
+                        .post(
+                            "{\"amount\":1999,\"currency\":\"usd\"}"
+                                .toRequestBody("application/json".toMediaType())
+                        )
+                        .build()
+
+                    val response = client.newCall(request).execute()
+                    val body = response.body?.string().orEmpty()
+                    JSONObject(body).getString("clientSecret")
+                }
+
+                val config = PaymentSheet.Configuration(merchantDisplayName = "ParkSpot")
+                paymentSheet.presentWithPaymentIntent(clientSecret, config)
 
             } catch (e: Exception) {
                 if (isAdded) {
