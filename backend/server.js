@@ -4,12 +4,12 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const authRoutes = require('./routes/auth');
-const listingRoutes = require('./routes/listings');
-const bookingRoutes = require('./routes/bookings');
-const paymentRoutes = require('./routes/payments');
-const notificationRoutes = require('./routes/notifications');
-const userRoutes = require('./routes/users');
+const authRoutes = require('./src/routes/auth');
+const listingRoutes = require('./src/routes/listings');
+const bookingRoutes = require('./src/routes/bookings');
+const paymentRoutes = require('./src/routes/payments');
+const notificationRoutes = require('./src/routes/notifications');
+const userRoutes = require('./src/routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
