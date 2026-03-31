@@ -32,6 +32,12 @@ android {
         val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
 
+        // ParkSpot backend (emulator: http://10.0.2.2:3000/ — trailing slash required for Retrofit)
+        val apiBaseUrl = localProperties.getProperty("API_BASE_URL", "http://10.0.2.2:3000/")
+            .trim()
+            .let { if (it.endsWith("/")) it else "$it/" }
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+
         // Add API key to manifest placeholders
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }

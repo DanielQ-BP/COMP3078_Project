@@ -23,6 +23,7 @@ class AuthPreferences(private val context: Context) {
 
         val USERNAME = stringPreferencesKey("username")
         val EMAIL = stringPreferencesKey("email")
+        val ROLE = stringPreferencesKey("role")
     }
 
     val authToken: Flow<String?> = context.dataStore.data
@@ -38,13 +39,22 @@ class AuthPreferences(private val context: Context) {
     val email: Flow<String?> = context.dataStore.data
         .map { preferences -> preferences[Keys.EMAIL] }
 
-    // Updated to save username and email
-    suspend fun saveAuthDetails(token: String, userId: String, username: String, email: String) {
+    val role: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.ROLE] }
+
+    suspend fun saveAuthDetails(
+        token: String,
+        userId: String,
+        username: String,
+        email: String,
+        role: String = "user",
+    ) {
         context.dataStore.edit { preferences ->
             preferences[Keys.AUTH_TOKEN] = token
             preferences[Keys.USER_ID] = userId
             preferences[Keys.USERNAME] = username
             preferences[Keys.EMAIL] = email
+            preferences[Keys.ROLE] = role
         }
     }
 

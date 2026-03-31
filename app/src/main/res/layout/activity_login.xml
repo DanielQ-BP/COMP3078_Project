@@ -21,6 +21,23 @@
         android:inputType="textPassword"
         android:layout_marginBottom="8dp" />
 
+    <CheckBox
+        android:id="@+id/adminLoginCheckBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Administrator sign-in"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/adminIdEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Admin ID"
+        android:visibility="gone"
+        android:importantForAutofill="no"
+        android:inputType="textVisiblePassword"
+        android:layout_marginBottom="8dp" />
+
     <Button
         android:id="@+id/loginButton"
         android:layout_width="wrap_content"
