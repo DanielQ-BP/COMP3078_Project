@@ -28,19 +28,20 @@ class RegistrationActivity : AppCompatActivity() {
             val password = binding.passwordEditText.text.toString()
 
             if (username.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
-                
+
                 // Save to SharedPreferences for "Login" to check later (Simple Mock Database)
                 val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
                 with(sharedPrefs.edit()) {
-                    putString("user_$username", password) // Store password key as "user_username"
+                    putString("user_$username", password)
                     putString("email_$username", email)
+                    putBoolean("isOwner_$username", false) // Driver by default
                     apply()
                 }
 
                 // Also auto-login by saving to AuthPreferences immediately if you want, 
                 // OR just redirect to login. Let's redirect to login to simulate flow.
                 Toast.makeText(this, "Registration Successful! Please Login.", Toast.LENGTH_SHORT).show()
-                
+
                 val intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
                 finish()

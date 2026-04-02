@@ -3,9 +3,8 @@ package com.comp3074_101384549.projectui.repository
 import com.comp3074_101384549.projectui.data.local.BookingDao
 import com.comp3074_101384549.projectui.model.BookingEntity
 import kotlinx.coroutines.flow.first
-import javax.inject.Inject
 
-class BookingRepository @Inject constructor(
+class BookingRepository(
     private val bookingDao: BookingDao
 ) {
 

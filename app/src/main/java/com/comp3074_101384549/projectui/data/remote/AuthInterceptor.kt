@@ -5,13 +5,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
-import javax.inject.Inject
 
 /**
  * Interceptor that adds the Authorization header with the user's token
  * to all outgoing API requests.
  */
-class AuthInterceptor @Inject constructor(
+class AuthInterceptor(
     private val authPreferences: AuthPreferences
 ) : Interceptor {
 

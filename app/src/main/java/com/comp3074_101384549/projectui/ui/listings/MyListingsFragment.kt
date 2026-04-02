@@ -19,6 +19,7 @@ import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.repository.ListingRepository
 import com.comp3074_101384549.projectui.ui.adapter.MyListingAdapter
+import com.comp3074_101384549.projectui.ui.home.HomeFragment
 import com.comp3074_101384549.projectui.model.Listing
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -61,6 +62,32 @@ class MyListingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ── Role guard ──────────────────────────────────────────────
+        viewLifecycleOwner.lifecycleScope.launch {
+            val inOwnerMode = authPreferences.isInOwnerMode.first()
+            if (!inOwnerMode) {
+                val hasOwner = authPreferences.hasOwnerAccount.first()
+                if (hasOwner) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Switch to Owner Mode from the menu to manage your listings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.homeFragmentContainer, HomeFragment())
+                        .commit()
+                } else {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.homeFragmentContainer, BecomeOwnerFragment())
+                        .commit()
+                }
+                return@launch
+            }
+            setupListings(view)
+        }
+    }
+
+    private fun setupListings(view: View) {
         emptyState = view.findViewById(R.id.emptyState)
         recyclerView = view.findViewById(R.id.recyclerViewListings)
         deleteAllButton = view.findViewById(R.id.buttonDeleteAll)

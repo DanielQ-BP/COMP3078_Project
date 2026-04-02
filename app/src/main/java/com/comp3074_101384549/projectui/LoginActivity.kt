@@ -10,9 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.databinding.ActivityLoginBinding
 
-import com.comp3074_101384549.projectui.HomeActivity
 import com.comp3074_101384549.projectui.data.remote.ApiService
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -23,7 +21,7 @@ class LoginActivity : AppCompatActivity() {
     // In a Hilt setup, this would be @Inject lateInit var
     private lateinit var apiService: ApiService
 
-    
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,19 +47,19 @@ class LoginActivity : AppCompatActivity() {
             val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
             val storedPassword = sharedPrefs.getString("user_$username", null)
             val storedEmail = sharedPrefs.getString("email_$username", "user@example.com")
+            val storedIsOwner = sharedPrefs.getBoolean("isOwner_$username", false)
 
             if (storedPassword == password) {
-                // Login Success!
                 lifecycleScope.launch {
-                    // Save session details
                     authPreferences.saveAuthDetails(
                         token = "dummy_token_123",
                         userId = username,
                         username = username,
-                        email = storedEmail ?: ""
+                        email = storedEmail ?: "",
+                        hasOwnerAccount = storedIsOwner,
+                        currentMode = AuthPreferences.MODE_DRIVER
                     )
 
-                    // Also update ProfileFragment's separate SharedPreferences so it shows up immediately
                     val profilePrefs = getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE)
                     with(profilePrefs.edit()) {
                         putString("username", username)

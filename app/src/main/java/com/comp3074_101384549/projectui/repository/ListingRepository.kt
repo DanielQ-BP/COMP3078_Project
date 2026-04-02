@@ -5,9 +5,8 @@ import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.model.ListingEntity
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import kotlinx.coroutines.flow.first
-import javax.inject.Inject
 
-class ListingRepository @Inject constructor(
+class ListingRepository(
     private val apiService: ApiService,
     private val listingDao: ListingDao
 ) {

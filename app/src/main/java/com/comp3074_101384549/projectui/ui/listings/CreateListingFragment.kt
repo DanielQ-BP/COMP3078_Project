@@ -18,6 +18,7 @@ import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.model.Listing
+import com.comp3074_101384549.projectui.ui.home.HomeFragment
 import com.comp3074_101384549.projectui.utils.MapUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -56,6 +57,32 @@ class CreateListingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ── Role guard ──────────────────────────────────────────────
+        viewLifecycleOwner.lifecycleScope.launch {
+            val inOwnerMode = authPreferences.isInOwnerMode.first()
+            if (!inOwnerMode) {
+                val hasOwner = authPreferences.hasOwnerAccount.first()
+                if (hasOwner) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Switch to Owner Mode from the menu to create listings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.homeFragmentContainer, HomeFragment())
+                        .commit()
+                } else {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.homeFragmentContainer, BecomeOwnerFragment())
+                        .commit()
+                }
+                return@launch
+            }
+            setupForm(view)
+        }
+    }
+
+    private fun setupForm(view: View) {
         val address = view.findViewById<TextInputEditText>(R.id.editTextAddress)
         val price = view.findViewById<TextInputEditText>(R.id.editTextPrice)
         val availability = view.findViewById<TextInputEditText>(R.id.editTextAvailability)

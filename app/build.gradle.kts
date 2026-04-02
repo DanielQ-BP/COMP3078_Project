@@ -4,8 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     kotlin("kapt")
-    alias(libs.plugins.dagger.hilt)
-
 }
 
 // Load local.properties
@@ -81,9 +79,6 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)
-    // Hilt (Dependency Injection)
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler) // Use 'kapt' instead of 'implementation' for the compiler
     // Required for lifecycleScope in Fragments
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
