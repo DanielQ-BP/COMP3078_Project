@@ -10,6 +10,8 @@ const bookingRoutes = require('./src/routes/bookings');
 const paymentRoutes = require('./src/routes/payments');
 const notificationRoutes = require('./src/routes/notifications');
 const userRoutes = require('./src/routes/users');
+const ticketRoutes = require('./src/routes/tickets'); // ADD after other requires
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +44,9 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
+
+app.use('/tickets', ticketRoutes); // ADD after other app.use routes
+
 
 app.listen(PORT, () => {
     console.log(`ParkSpot API running on port ${PORT}`);
