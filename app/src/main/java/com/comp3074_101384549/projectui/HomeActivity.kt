@@ -227,7 +227,7 @@ class HomeActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun performLogout() {
+    internal fun performLogout() {
         lifecycleScope.launch {
             authPreferences.clearAuthDetails()
             Toast.makeText(this@HomeActivity, "Logged out successfully", Toast.LENGTH_SHORT).show()
