@@ -14,6 +14,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 /**
  * Auth state and app mode: one login, separate [hasOwnerAccount] vs [currentMode].
+ * [role] stores server/mock role (e.g. "user", "admin").
  */
 class AuthPreferences(private val context: Context) {
 
@@ -24,6 +25,7 @@ class AuthPreferences(private val context: Context) {
         val EMAIL = stringPreferencesKey("email")
         val HAS_OWNER_ACCOUNT = booleanPreferencesKey("has_owner_account")
         val CURRENT_MODE = stringPreferencesKey("current_mode")
+        val ROLE = stringPreferencesKey("role")
         /** Legacy key — migrated into [HAS_OWNER_ACCOUNT] / [CURRENT_MODE] on write. */
         val LEGACY_IS_SPOT_OWNER = booleanPreferencesKey("is_spot_owner")
     }
@@ -39,6 +41,10 @@ class AuthPreferences(private val context: Context) {
 
     val email: Flow<String?> = context.dataStore.data
         .map { preferences -> preferences[Keys.EMAIL] }
+
+    /** Server/mock role: e.g. "user", "admin". */
+    val role: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[Keys.ROLE] }
 
     /** True if this user completed Spot Owner registration (capabilities persist across modes). */
     val hasOwnerAccount: Flow<Boolean> = context.dataStore.data.map { p ->
@@ -59,7 +65,8 @@ class AuthPreferences(private val context: Context) {
         username: String,
         email: String,
         hasOwnerAccount: Boolean = false,
-        currentMode: String = MODE_DRIVER
+        currentMode: String = MODE_DRIVER,
+        role: String = "user",
     ) {
         context.dataStore.edit { preferences ->
             preferences[Keys.AUTH_TOKEN] = token
@@ -68,6 +75,7 @@ class AuthPreferences(private val context: Context) {
             preferences[Keys.EMAIL] = email
             preferences[Keys.HAS_OWNER_ACCOUNT] = hasOwnerAccount
             preferences[Keys.CURRENT_MODE] = currentMode
+            preferences[Keys.ROLE] = role
             preferences.remove(Keys.LEGACY_IS_SPOT_OWNER)
         }
     }

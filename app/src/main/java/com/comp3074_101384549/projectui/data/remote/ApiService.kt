@@ -1,7 +1,10 @@
 package com.comp3074_101384549.projectui.data.remote
 
 
+import com.comp3074_101384549.projectui.model.AdminLoginRequest
 import com.comp3074_101384549.projectui.model.Listing
+import com.comp3074_101384549.projectui.model.PaymentIntentRequest
+import com.comp3074_101384549.projectui.model.PaymentIntentResponse
 import com.comp3074_101384549.projectui.model.User
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -21,6 +24,9 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body user: User): String
 
+    @POST("auth/admin/login")
+    suspend fun adminLogin(@Body body: AdminLoginRequest): String
+
     // Fetch all listings
     @GET("listings/all")
     suspend fun getRemoteListings(): List<Listing>
@@ -28,5 +34,8 @@ interface ApiService {
     // Post a new listing
     @POST("listings/create")
     suspend fun createListing(@Body listing: Listing): Listing
+
+    @POST("payments/create-payment-intent")
+    suspend fun createPaymentIntent(@Body request: PaymentIntentRequest): PaymentIntentResponse
 
 }
