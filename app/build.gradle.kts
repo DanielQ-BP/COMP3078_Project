@@ -30,6 +30,10 @@ android {
         val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
 
+        // Stripe publishable key
+        val stripeKey = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY", "")
+        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"$stripeKey\"")
+
         // ParkSpot backend (emulator: http://10.0.2.2:3000/ — trailing slash required for Retrofit)
         val apiBaseUrl = localProperties.getProperty("API_BASE_URL", "http://10.0.2.2:3000/")
             .trim()

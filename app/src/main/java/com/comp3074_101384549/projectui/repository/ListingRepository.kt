@@ -29,32 +29,40 @@ class ListingRepository(
     }
 
     /**
-     * Fetches all listings for a specific user from the local Room database.
-     * NOTE: Must be called from a coroutine scope (e.g., lifecycleScope.launch).
+     * Fetches all listings for a specific user (owner view).
      */
     suspend fun getAllListings(userId: String): List<Listing> {
-        // Collects the latest list of entities from the DAO Flow and converts it to a simple List.
         return listingDao.getAllListings(userId).first().toListingList()
     }
 
     /**
-     * Searches listings for a specific user in the local Room database.
-     * NOTE: Must be called from a coroutine scope (e.g., lifecycleScope.launch).
+     * Fetches all listings regardless of owner (driver browse view).
+     */
+    suspend fun getAllActiveListings(): List<Listing> {
+        return listingDao.getAllActiveListings().first().toListingList()
+    }
+
+    /**
+     * Searches listings for a specific user (owner view).
      */
     suspend fun searchListings(userId: String, address: String = "", maxPrice: Double? = null): List<Listing> {
-
-        // 1. Get filtered data from the DAO (filters by address/description/availability and userId)
         val addressQuery = if (address.isBlank()) "%" else "%$address%"
-        val allMatchingEntities = listingDao.searchListings(userId, addressQuery).first()
-
-        // 2. Convert to Listing model
-        var results = allMatchingEntities.toListingList()
-
-        // 3. Filter by maxPrice in the Repository layer (since SQL query is complex for null maxPrice)
+        var results = listingDao.searchListings(userId, addressQuery).first().toListingList()
         if (maxPrice != null && maxPrice > 0) {
             results = results.filter { it.pricePerHour <= maxPrice }
         }
+        return results
+    }
 
+    /**
+     * Searches all listings regardless of owner (driver browse view).
+     */
+    suspend fun searchAllListings(address: String = "", maxPrice: Double? = null): List<Listing> {
+        val addressQuery = if (address.isBlank()) "%" else "%$address%"
+        var results = listingDao.searchAllListings(addressQuery).first().toListingList()
+        if (maxPrice != null && maxPrice > 0) {
+            results = results.filter { it.pricePerHour <= maxPrice }
+        }
         return results
     }
     /**

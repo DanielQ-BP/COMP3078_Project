@@ -17,8 +17,14 @@ interface ListingDao {
     @Query("SELECT * FROM listings WHERE user_id = :userId ORDER BY price_hour ASC")
     fun getAllListings(userId: String): Flow<List<ListingEntity>>
 
+    @Query("SELECT * FROM listings ORDER BY price_hour ASC")
+    fun getAllActiveListings(): Flow<List<ListingEntity>>
+
     @Query("SELECT * FROM listings WHERE user_id = :userId AND (address LIKE :query OR description LIKE :query OR availability LIKE :query) ORDER BY price_hour ASC")
     fun searchListings(userId: String, query: String): Flow<List<ListingEntity>>
+
+    @Query("SELECT * FROM listings WHERE (address LIKE :query OR description LIKE :query OR availability LIKE :query) ORDER BY price_hour ASC")
+    fun searchAllListings(query: String): Flow<List<ListingEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(listings: List<ListingEntity>)

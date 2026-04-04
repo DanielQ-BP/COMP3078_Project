@@ -12,6 +12,7 @@ import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.databinding.ActivityLoginBinding
 import com.comp3074_101384549.projectui.model.AdminLoginRequest
+import com.comp3074_101384549.projectui.model.User
 import com.comp3074_101384549.projectui.utils.JwtPayloadUtil
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -55,7 +56,9 @@ class LoginActivity : AppCompatActivity() {
                     performAdminLogin(username, password, adminId)
                 }
             } else {
-                performMockUserLogin(username, password)
+                lifecycleScope.launch {
+                    performUserLogin(username, password)
+                }
             }
         }
 
@@ -114,33 +117,58 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun performMockUserLogin(username: String, password: String) {
-        val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
-        val storedPassword = sharedPrefs.getString("user_$username", null)
-        val storedEmail = sharedPrefs.getString("email_$username", "user@example.com")
-        val storedIsOwner = sharedPrefs.getBoolean("isOwner_$username", false)
+    private suspend fun performUserLogin(username: String, password: String) {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val api = retrofit.create(ApiService::class.java)
 
-        if (storedPassword == password) {
-            lifecycleScope.launch {
-                authPreferences.saveAuthDetails(
-                    token = "dummy_token_123",
-                    userId = username,
-                    username = username,
-                    email = storedEmail ?: "",
-                    hasOwnerAccount = storedIsOwner,
-                    currentMode = AuthPreferences.MODE_DRIVER,
-                    role = "user",
-                )
-                getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE).edit()
-                    .putString("username", username)
-                    .apply()
-
-                Toast.makeText(this@LoginActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
-                finish()
+        try {
+            val token = api.login(User(username = username, password = password))
+            val payload = JwtPayloadUtil.readPayload(token)
+            if (payload == null) {
+                Toast.makeText(this@LoginActivity, "Invalid server response", Toast.LENGTH_SHORT).show()
+                return
             }
-        } else {
-            Toast.makeText(this, "Invalid Username or Password", Toast.LENGTH_SHORT).show()
+            val userId = payload.optString("id", "")
+            val uname = payload.optString("username", username)
+            val email = payload.optString("email", "")
+            val role = payload.optString("role", "user")
+            if (userId.isEmpty()) {
+                Toast.makeText(this@LoginActivity, "Invalid token", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            authPreferences.saveAuthDetails(
+                token = token,
+                userId = userId,
+                username = uname,
+                email = email,
+                hasOwnerAccount = false,
+                currentMode = AuthPreferences.MODE_DRIVER,
+                role = role,
+            )
+            getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE).edit()
+                .putString("username", uname)
+                .apply()
+
+            Toast.makeText(this@LoginActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
+            finish()
+        } catch (e: HttpException) {
+            val msg = when (e.code()) {
+                401 -> "Invalid username or password"
+                403 -> "Admin accounts must use the Admin login"
+                else -> "Login failed (${e.code()})"
+            }
+            Toast.makeText(this@LoginActivity, msg, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(
+                this@LoginActivity,
+                "Cannot reach server. Check that the backend is running.",
+                Toast.LENGTH_LONG,
+            ).show()
         }
     }
 }

@@ -8,7 +8,7 @@ class MyApplication : Application() {
         super.onCreate()
         PaymentConfiguration.init(
             applicationContext,
-            "pk_test_51SXchzK6Clah5kX0Wtj1y8q37txVKfMvWqhxPITIlfOxqTipWg91IhezuR547gQOJwIgNSKm8ekZ9E8y3nEWOFii00BEoXvvyy"
+            BuildConfig.STRIPE_PUBLISHABLE_KEY
         )
     }
 }

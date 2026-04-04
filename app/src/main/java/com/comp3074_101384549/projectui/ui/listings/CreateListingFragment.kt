@@ -13,15 +13,18 @@ import com.google.android.material.textfield.TextInputEditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.repository.ListingRepository
+import com.comp3074_101384549.projectui.BuildConfig
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.ui.home.HomeFragment
 import com.comp3074_101384549.projectui.utils.MapUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.UUID
@@ -37,14 +40,18 @@ class CreateListingFragment : Fragment() {
         val db = AppDatabase.getDatabase(context)
         val listingDao = db.listingDao()
 
+        authPreferences = AuthPreferences(context)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(authPreferences))
+            .build()
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://example.com/")
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         val apiService = retrofit.create(ApiService::class.java)
         listingRepository = ListingRepository(apiService, listingDao)
-        authPreferences = AuthPreferences(context)
     }
 
     override fun onCreateView(

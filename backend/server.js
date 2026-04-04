@@ -33,6 +33,7 @@ app.use('/bookings', bookingRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/users', userRoutes);
+app.use('/tickets', ticketRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -44,8 +45,6 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
-
-app.use('/tickets', ticketRoutes); // ADD after other app.use routes
 
 
 app.listen(PORT, () => {
