@@ -1,6 +1,7 @@
 package com.comp3074_101384549.projectui.ui.profile
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
@@ -10,14 +11,15 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.comp3074_101384549.projectui.HomeActivity
+import com.comp3074_101384549.projectui.MainActivity
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.databinding.FragmentProfileBinding
+import com.comp3074_101384549.projectui.ui.support.MyTicketsFragment
+import com.comp3074_101384549.projectui.ui.support.SubmitTicketFragment
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -26,13 +28,13 @@ class ProfileFragment : Fragment() {
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    private val prefsName = "ParkSpotPrefs"
-    private val keyProfileImageUri = "profile_image_uri"
-    private val mockUserDbName = "MockUserDB"
-    private val keyMemberSincePrefix = "memberSince_"
+    private val PREFS_NAME = "ParkSpotPrefs"
+    private val KEY_PROFILE_IMAGE_URI = "profile_image_uri"
+    private val KEY_MEMBER_SINCE = "member_since"
 
     private lateinit var prefs: SharedPreferences
     private lateinit var authPreferences: AuthPreferences
+    private var selectedImageUri: Uri? = null
 
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -44,7 +46,7 @@ class ProfileFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         authPreferences = AuthPreferences(context)
     }
 
@@ -60,148 +62,138 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.profileAvatarContainer.setOnClickListener { pickImageLauncher.launch("image/*") }
-        binding.cameraOverlay.setOnClickListener { pickImageLauncher.launch("image/*") }
+        loadProfile()
+        loadProfileImage()
+        loadUserStats()
 
-        binding.buttonEditProfile.setOnClickListener { enterEditMode() }
-        binding.buttonCancelEdit.setOnClickListener { cancelEditMode() }
-        binding.buttonSaveProfile.setOnClickListener { savePersonalInfo() }
+        binding.btnChangePhoto.visibility = View.GONE
+
+        binding.btnChangePhoto.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
+
+        binding.editProfileButton.setOnClickListener {
+            binding.readOnlyContainer.visibility = View.GONE
+            binding.editContainer.visibility = View.VISIBLE
+            binding.editProfileButton.visibility = View.GONE
+            binding.btnChangePhoto.visibility = View.VISIBLE
+        }
+
+        binding.saveButton.setOnClickListener {
+            val newBio = binding.bioEditText.text.toString().trim()
+            val newPhone = binding.phoneEditText.text.toString().trim()
+
+            if (newBio.isEmpty()) {
+                Toast.makeText(requireContext(), "Please enter a bio", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            with(prefs.edit()) {
+                putString("bio", newBio)
+                putString("phone", newPhone)
+                apply()
+            }
+
+            binding.readOnlyContainer.visibility = View.VISIBLE
+            binding.editContainer.visibility = View.GONE
+            binding.editProfileButton.visibility = View.VISIBLE
+            binding.btnChangePhoto.visibility = View.GONE
+
+            loadProfile()
+            Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.buttonSubmitTicket.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, SubmitTicketFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+
+        binding.buttonViewTickets.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, MyTicketsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
 
         binding.buttonLogout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle(R.string.logout)
                 .setMessage(R.string.logout_confirm_message)
                 .setPositiveButton(R.string.logout) { _, _ ->
-                    (activity as? HomeActivity)?.performLogout()
+                    lifecycleScope.launch {
+                        authPreferences.clearAuthDetails()
+                        val intent = Intent(requireContext(), MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    }
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
-
-        loadProfileImage()
-        refreshProfileContent()
     }
 
     override fun onResume() {
         super.onResume()
-        refreshProfileContent()
+        loadProfile()
+        loadUserStats()
     }
 
-    private fun refreshProfileContent() {
-        viewLifecycleOwner.lifecycleScope.launch {
+    private fun loadProfile() {
+        lifecycleScope.launch {
             val username = authPreferences.username.first() ?: "User"
             val email = authPreferences.email.first() ?: ""
-            val userId = authPreferences.userId.first()
-            val inOwnerMode = authPreferences.isInOwnerMode.first()
-            val hasOwnerAccount = authPreferences.hasOwnerAccount.first()
-
-            if (!isAdded) return@launch
-
-            binding.headerUsername.text = username
-            binding.headerEmail.text = email.ifEmpty { getString(R.string.profile_no_email) }
-
-            if (inOwnerMode) {
-                binding.roleBadge.text = getString(R.string.role_badge_owner)
-                binding.roleBadge.setBackgroundResource(R.drawable.bg_role_badge_owner)
-                binding.roleBadge.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.parkspot_dark_green)
-                )
-            } else {
-                binding.roleBadge.text = getString(R.string.role_badge_driver)
-                binding.roleBadge.setBackgroundResource(R.drawable.bg_role_badge_driver)
-                binding.roleBadge.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.white)
-                )
-            }
-
-            val mockDb = requireContext().getSharedPreferences(mockUserDbName, Context.MODE_PRIVATE)
-            val memberSince = userId?.let { mockDb.getString("$keyMemberSincePrefix$it", null) }
-            binding.memberSinceValue.text = memberSince ?: getString(R.string.member_since_unknown)
-            binding.accountEmailValue.text = email.ifEmpty { getString(R.string.profile_no_email) }
-
-            binding.ownerModeBanner.visibility =
-                if (hasOwnerAccount && !inOwnerMode) View.VISIBLE else View.GONE
-
             val bio = prefs.getString("bio", "") ?: ""
             val phone = prefs.getString("phone", "") ?: ""
-            if (binding.personalEditGroup.visibility != View.VISIBLE) {
-                binding.bioDisplay.text = bio.ifEmpty { getString(R.string.profile_bio_placeholder) }
-                binding.phoneDisplay.text = phone.ifEmpty { getString(R.string.profile_phone_placeholder) }
-                binding.bioEditText.setText(bio)
-                binding.phoneEditText.setText(phone)
+            var memberSince = prefs.getString(KEY_MEMBER_SINCE, null)
+
+            if (memberSince == null) {
+                val currentDate = java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault())
+                    .format(java.util.Date())
+                prefs.edit().putString(KEY_MEMBER_SINCE, currentDate).apply()
+                memberSince = currentDate
             }
 
-            if (userId == null) {
-                if (!isAdded) return@launch
-                binding.statTotalListings.text = "0"
-                binding.statActiveListings.text = "0"
-                binding.statBookingsMade.text = "0"
-                return@launch
-            }
+            binding.usernameTextView.text = username
+            binding.emailTextView.text = email.ifEmpty { "No email provided" }
+            binding.bioReadOnly.text = bio.ifEmpty { "No bio yet. Click Edit Profile to add one." }
+            binding.phoneReadOnly.text = phone.ifEmpty { "Not provided" }
+            binding.memberSinceTextView.text = "Member since $memberSince"
+            binding.bioEditText.setText(bio)
+            binding.phoneEditText.setText(phone)
+        }
+    }
 
-            val db = AppDatabase.getDatabase(requireContext())
-            val bookings = db.bookingDao().getAllBookings(userId).first()
-            if (!isAdded) return@launch
-            binding.statBookingsMade.text = bookings.size.toString()
-
-            if (inOwnerMode) {
-                val listings = db.listingDao().getAllListings(userId).first()
-                if (!isAdded) return@launch
-                binding.statTotalListings.text = listings.size.toString()
-                binding.statActiveListings.text = listings.count { it.isActive }.toString()
+    private fun loadUserStats() {
+        lifecycleScope.launch {
+            val userId = authPreferences.userId.first()
+            if (userId != null) {
+                val db = AppDatabase.getDatabase(requireContext())
+                val listingDao = db.listingDao()
+                val listings = listingDao.getAllListings(userId).first()
+                binding.totalListingsTextView.text = listings.size.toString()
+                binding.activeListingsTextView.text = listings.count { it.isActive }.toString()
             } else {
-                binding.statTotalListings.text = "0"
-                binding.statActiveListings.text = "0"
+                binding.totalListingsTextView.text = "0"
+                binding.activeListingsTextView.text = "0"
             }
         }
     }
 
-    private fun enterEditMode() {
-        val bio = prefs.getString("bio", "") ?: ""
-        val phone = prefs.getString("phone", "") ?: ""
-        binding.bioEditText.setText(bio)
-        binding.phoneEditText.setText(phone)
-        binding.personalViewGroup.visibility = View.GONE
-        binding.personalEditGroup.visibility = View.VISIBLE
-        binding.buttonEditProfile.visibility = View.GONE
-    }
-
-    private fun cancelEditMode() {
-        binding.personalEditGroup.visibility = View.GONE
-        binding.personalViewGroup.visibility = View.VISIBLE
-        binding.buttonEditProfile.visibility = View.VISIBLE
-    }
-
-    private fun savePersonalInfo() {
-        val newBio = binding.bioEditText.text?.toString()?.trim() ?: ""
-        val newPhone = binding.phoneEditText.text?.toString()?.trim() ?: ""
-
-        prefs.edit()
-            .putString("bio", newBio)
-            .putString("phone", newPhone)
-            .apply()
-
-        cancelEditMode()
-        binding.bioDisplay.text = newBio.ifEmpty { getString(R.string.profile_bio_placeholder) }
-        binding.phoneDisplay.text = newPhone.ifEmpty { getString(R.string.profile_phone_placeholder) }
-
-        Toast.makeText(requireContext(), R.string.profile_updated_toast, Toast.LENGTH_SHORT).show()
-    }
-
     private fun saveProfileImageUri(uri: Uri) {
-        prefs.edit()
-            .putString(keyProfileImageUri, uri.toString())
-            .apply()
+        prefs.edit().putString(KEY_PROFILE_IMAGE_URI, uri.toString()).apply()
     }
 
     private fun loadProfileImage() {
-        val uriString = prefs.getString(keyProfileImageUri, null)
+        val uriString = prefs.getString(KEY_PROFILE_IMAGE_URI, null)
         if (!uriString.isNullOrEmpty()) {
             try {
                 val uri = Uri.parse(uriString)
+                selectedImageUri = uri
                 binding.profileImage.setImageURI(uri)
-            } catch (_: Exception) {
-                prefs.edit().remove(keyProfileImageUri).apply()
+            } catch (e: Exception) {
+                prefs.edit().remove(KEY_PROFILE_IMAGE_URI).apply()
             }
         }
     }

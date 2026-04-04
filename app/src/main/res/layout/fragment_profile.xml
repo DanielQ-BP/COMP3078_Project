@@ -429,9 +429,40 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:text="@string/edit_profile"
                     android:textColor="@color/parkspot_green"
                     app:strokeColor="@color/parkspot_green" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E0E0E0"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Support"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonSubmitTicket"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Submit a Support Ticket"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonViewTickets"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="View My Tickets"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginBottom="24dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
