@@ -38,6 +38,10 @@
         <activity android:name=".RegistrationActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="false" />
         <activity android:name=".HomeActivity" android:exported="false" />
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ProjectUI" />
     </application>
 
 </manifest>

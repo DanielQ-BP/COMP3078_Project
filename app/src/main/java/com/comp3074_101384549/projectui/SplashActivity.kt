@@ -59,13 +59,15 @@ class SplashActivity : AppCompatActivity() {
     private fun checkLoginAndNavigate() {
         lifecycleScope.launch {
             val userId = authPreferences.userId.first()
+            val role = authPreferences.role.first() ?: "user"
 
-            val intent = if (userId != null) {
-                // User is logged in, go to Home
-                Intent(this@SplashActivity, HomeActivity::class.java)
-            } else {
-                // User not logged in, go to Login/Main
-                Intent(this@SplashActivity, MainActivity::class.java)
+            val intent = when {
+                userId != null && role == "admin" ->
+                    Intent(this@SplashActivity, AdminActivity::class.java)
+                userId != null ->
+                    Intent(this@SplashActivity, HomeActivity::class.java)
+                else ->
+                    Intent(this@SplashActivity, MainActivity::class.java)
             }
 
             startActivity(intent)

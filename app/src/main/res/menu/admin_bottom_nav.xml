@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/admin_nav_reservations"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Reservations" />
+    <item
+        android:id="@+id/admin_nav_users"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Users" />
+</menu>

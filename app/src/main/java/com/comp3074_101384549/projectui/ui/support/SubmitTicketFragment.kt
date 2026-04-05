@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +17,7 @@ import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.model.CreateTicketRequest
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -65,8 +67,17 @@ class SubmitTicketFragment : Fragment() {
 
         val subjectInput = view.findViewById<TextInputEditText>(R.id.editTextSubject)
         val descriptionInput = view.findViewById<TextInputEditText>(R.id.editTextDescription)
+        val reservationCodeInput = view.findViewById<TextInputEditText>(R.id.editReservationCode)
+        val layoutReservationCode = view.findViewById<TextInputLayout>(R.id.layoutReservationCode)
+        val radioGroup = view.findViewById<RadioGroup>(R.id.radioGroupTicketType)
         val submitButton = view.findViewById<Button>(R.id.buttonSubmitTicket)
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
+
+        radioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val dispute = checkedId == R.id.radioDispute
+            layoutReservationCode.visibility = if (dispute) android.view.View.VISIBLE else android.view.View.GONE
+            if (!dispute) reservationCodeInput.text?.clear()
+        }
 
         view.findViewById<Button>(R.id.buttonViewTickets).setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -78,9 +89,20 @@ class SubmitTicketFragment : Fragment() {
         submitButton.setOnClickListener {
             val subject = subjectInput.text.toString().trim()
             val description = descriptionInput.text.toString().trim()
+            val isDispute = radioGroup.checkedRadioButtonId == R.id.radioDispute
+            val reservationCode = reservationCodeInput.text.toString().trim()
 
             if (subject.isEmpty() || description.isEmpty()) {
                 Toast.makeText(requireContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (isDispute && reservationCode.isEmpty()) {
+                Toast.makeText(
+                    requireContext(),
+                    "Enter your reservation code to report a dispute (from your booking confirmation).",
+                    Toast.LENGTH_LONG,
+                ).show()
                 return@setOnClickListener
             }
 
@@ -89,11 +111,22 @@ class SubmitTicketFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    apiService.createTicket(CreateTicketRequest(subject, description))
+                    val request = if (isDispute) {
+                        CreateTicketRequest(
+                            subject = subject,
+                            description = description,
+                            category = "conflict",
+                            bookingReferenceCode = reservationCode.uppercase(),
+                        )
+                    } else {
+                        CreateTicketRequest(subject = subject, description = description)
+                    }
+                    apiService.createTicket(request)
                     if (isAdded) {
                         Toast.makeText(requireContext(), "✅ Ticket submitted!", Toast.LENGTH_LONG).show()
                         subjectInput.text?.clear()
                         descriptionInput.text?.clear()
+                        reservationCodeInput.text?.clear()
                     }
                 } catch (e: Exception) {
                     if (isAdded) {

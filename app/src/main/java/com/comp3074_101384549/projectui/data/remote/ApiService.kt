@@ -1,6 +1,14 @@
 package com.comp3074_101384549.projectui.data.remote
 
+import com.comp3074_101384549.projectui.model.AdminBookingDetailResponse
+import com.comp3074_101384549.projectui.model.AdminBookingRow
 import com.comp3074_101384549.projectui.model.AdminLoginRequest
+import com.comp3074_101384549.projectui.model.AdminUserDetailResponse
+import com.comp3074_101384549.projectui.model.AdminResolveConflictRequest
+import com.comp3074_101384549.projectui.model.AdminResolveConflictResponse
+import com.comp3074_101384549.projectui.model.AdminUserRow
+import com.comp3074_101384549.projectui.model.CreateBookingRequest
+import com.comp3074_101384549.projectui.model.CreateBookingResponse
 import com.comp3074_101384549.projectui.model.CreateTicketRequest
 import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.model.PaymentIntentRequest
@@ -14,6 +22,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -31,6 +40,30 @@ interface ApiService {
 
     @POST("listings/create")
     suspend fun createListing(@Body listing: Listing): Listing
+
+    @POST("bookings/create")
+    suspend fun createBooking(@Body body: CreateBookingRequest): CreateBookingResponse
+
+    @GET("admin/bookings")
+    suspend fun adminGetBookings(): List<AdminBookingRow>
+
+    @GET("admin/bookings/search")
+    suspend fun adminSearchBookings(@Query("q") q: String): List<AdminBookingRow>
+
+    @GET("admin/bookings/{id}/detail")
+    suspend fun adminGetBookingDetail(@Path("id") bookingId: String): AdminBookingDetailResponse
+
+    @POST("admin/conflicts/{ticketId}/resolve")
+    suspend fun adminResolveConflict(
+        @Path("ticketId") ticketId: String,
+        @Body body: AdminResolveConflictRequest,
+    ): AdminResolveConflictResponse
+
+    @GET("admin/users")
+    suspend fun adminGetUsers(): List<AdminUserRow>
+
+    @GET("admin/users/{id}/detail")
+    suspend fun adminGetUserDetail(@Path("id") userId: String): AdminUserDetailResponse
 
     @POST("payments/create-payment-intent")
     suspend fun createPaymentIntent(@Body request: PaymentIntentRequest): PaymentIntentResponse

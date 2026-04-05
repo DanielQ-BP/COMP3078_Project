@@ -10,8 +10,8 @@ const bookingRoutes = require('./src/routes/bookings');
 const paymentRoutes = require('./src/routes/payments');
 const notificationRoutes = require('./src/routes/notifications');
 const userRoutes = require('./src/routes/users');
-const ticketRoutes = require('./src/routes/tickets'); // ADD after other requires
-
+const ticketRoutes = require('./src/routes/tickets');
+const adminRoutes = require('./src/routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +34,7 @@ app.use('/payments', paymentRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/users', userRoutes);
 app.use('/tickets', ticketRoutes);
+app.use('/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

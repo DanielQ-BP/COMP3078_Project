@@ -104,7 +104,7 @@ class LoginActivity : AppCompatActivity() {
                 .apply()
 
             Toast.makeText(this@LoginActivity, "Admin login successful", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this@LoginActivity, HomeActivity::class.java))
+            startActivity(Intent(this@LoginActivity, AdminActivity::class.java))
             finish()
         } catch (_: HttpException) {
             Toast.makeText(this@LoginActivity, "Invalid credentials or server error", Toast.LENGTH_SHORT).show()

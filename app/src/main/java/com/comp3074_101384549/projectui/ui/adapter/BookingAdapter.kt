@@ -3,6 +3,7 @@ package com.comp3074_101384549.projectui.ui.adapter
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
@@ -19,6 +20,7 @@ class BookingAdapter(
     class BookingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val status: TextView = itemView.findViewById(R.id.textStatus)
         val address: TextView = itemView.findViewById(R.id.textAddress)
+        val reservationCode: TextView = itemView.findViewById(R.id.textReservationCode)
         val date: TextView = itemView.findViewById(R.id.textDate)
         val time: TextView = itemView.findViewById(R.id.textTime)
         val total: TextView = itemView.findViewById(R.id.textTotal)
@@ -35,6 +37,12 @@ class BookingAdapter(
         val booking = bookings[position]
 
         holder.address.text = booking.address
+        if (booking.referenceCode.isNotBlank()) {
+            holder.reservationCode.visibility = View.VISIBLE
+            holder.reservationCode.text = "Reservation code: ${booking.referenceCode}"
+        } else {
+            holder.reservationCode.visibility = View.GONE
+        }
         holder.date.text = booking.bookingDate
         holder.time.text = "${booking.startTime} - ${booking.endTime}"
         holder.total.text = "$${String.format("%.2f", booking.totalPrice)}"
