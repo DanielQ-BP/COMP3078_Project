@@ -1,8 +1,13 @@
 const express = require('express');
+const crypto = require('crypto');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+function generateReferenceCode() {
+    return `PS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
 
 // GET /bookings/user/:userId - Get user's bookings
 router.get('/user/:userId', authenticateToken, async (req, res) => {
@@ -13,6 +18,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
             SELECT b.id, b.listing_id as "listingId", b.user_id as "userId",
                    b.start_time as "startTime", b.end_time as "endTime",
                    b.total_price as "totalPrice", b.status,
+                   b.reference_code as "referenceCode",
                    l.address, l.price_per_hour as "pricePerHour"
             FROM bookings b
             JOIN listings l ON b.listing_id = l.id
@@ -36,6 +42,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             SELECT b.id, b.listing_id as "listingId", b.user_id as "userId",
                    b.start_time as "startTime", b.end_time as "endTime",
                    b.total_price as "totalPrice", b.status,
+                   b.reference_code as "referenceCode",
                    l.address, l.price_per_hour as "pricePerHour",
                    l.latitude, l.longitude
             FROM bookings b
@@ -60,17 +67,38 @@ router.post('/create', authenticateToken, async (req, res) => {
         const { listingId, startTime, endTime, totalPrice } = req.body;
         const userId = req.user.id;
 
-        const result = await pool.query(`
-            INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status)
-            VALUES ($1, $2, $3, $4, $5, 'pending')
-            RETURNING id, listing_id as "listingId", user_id as "userId",
-                      start_time as "startTime", end_time as "endTime",
-                      total_price as "totalPrice", status
-        `, [listingId, userId, startTime, endTime, totalPrice]);
+        if (!listingId || !startTime || !endTime || totalPrice == null) {
+            return res.status(400).json({ error: 'listingId, startTime, endTime, and totalPrice are required' });
+        }
 
-        res.status(201).json(result.rows[0]);
+        let lastError;
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const referenceCode = generateReferenceCode();
+            try {
+                const result = await pool.query(`
+                    INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status, reference_code)
+                    VALUES ($1, $2, $3, $4, $5, 'confirmed', $6)
+                    RETURNING id, listing_id as "listingId", user_id as "userId",
+                              start_time as "startTime", end_time as "endTime",
+                              total_price as "totalPrice", status, reference_code as "referenceCode"
+                `, [listingId, userId, startTime, endTime, totalPrice, referenceCode]);
+
+                return res.status(201).json(result.rows[0]);
+            } catch (error) {
+                lastError = error;
+                if (error.code === '23505') {
+                    continue;
+                }
+                throw error;
+            }
+        }
+        console.error('Create booking error (reference collision):', lastError);
+        res.status(500).json({ error: 'Failed to assign reservation code' });
     } catch (error) {
         console.error('Create booking error:', error);
+        if (error.code === '23503') {
+            return res.status(400).json({ error: 'Invalid listing or user' });
+        }
         res.status(500).json({ error: 'Failed to create booking' });
     }
 });

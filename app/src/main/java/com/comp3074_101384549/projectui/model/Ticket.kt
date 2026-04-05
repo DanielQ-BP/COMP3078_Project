@@ -7,6 +7,8 @@ data class Ticket(
     val subject: String,
     val description: String,
     val status: String,
+    val category: String? = null,
+    val bookingId: String? = null,
     val createdAt: String,
     val updatedAt: String? = null,
     val responses: List<TicketResponse>? = null
@@ -24,7 +26,9 @@ data class TicketResponse(
 
 data class CreateTicketRequest(
     val subject: String,
-    val description: String
+    val description: String,
+    val category: String = "general",
+    val bookingReferenceCode: String? = null,
 )
 
 data class TicketRespondRequest(
