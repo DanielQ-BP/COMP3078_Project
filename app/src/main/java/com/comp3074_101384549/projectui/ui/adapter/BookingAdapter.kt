@@ -54,6 +54,10 @@ class BookingAdapter(
                 holder.status.setBackgroundColor(Color.parseColor("#D32F2F")) // Red
                 holder.cancelButton.visibility = View.GONE
             }
+            "overstay" -> {
+                holder.status.setBackgroundColor(Color.parseColor("#E65100")) // Orange
+                holder.cancelButton.visibility = View.VISIBLE
+            }
             else -> {
                 holder.status.setBackgroundColor(Color.parseColor("#1A5A2B"))
                 holder.cancelButton.visibility = View.VISIBLE

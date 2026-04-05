@@ -2,6 +2,11 @@ package com.comp3074_101384549.projectui.utils
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.location.Address
 import android.location.Geocoder
 import android.net.Uri
@@ -12,18 +17,39 @@ import java.io.IOException
 
 object MapUtils {
 
+    fun createParkingMarkerIcon(context: Context): BitmapDescriptor {
+        val density = context.resources.displayMetrics.density
+        val size = (40 * density).toInt()
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        paint.color = Color.parseColor("#1A5A2B")
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+
+        paint.color = Color.WHITE
+        paint.textSize = size * 0.5f
+        paint.textAlign = Paint.Align.CENTER
+        paint.typeface = Typeface.DEFAULT_BOLD
+        val textY = size / 2f - (paint.descent() + paint.ascent()) / 2
+        canvas.drawText("P", size / 2f, textY, paint)
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
+    }
+
     fun addMarker(
         map: GoogleMap,
         position: LatLng,
         title: String,
-        snippet: String? = null
+        snippet: String? = null,
+        icon: BitmapDescriptor? = null
     ): Marker? {
-        return map.addMarker(
-            MarkerOptions()
-                .position(position)
-                .title(title)
-                .snippet(snippet)
-        )
+        val options = MarkerOptions()
+            .position(position)
+            .title(title)
+            .snippet(snippet)
+        icon?.let { options.icon(it) }
+        return map.addMarker(options)
     }
 
     fun drawRoute(

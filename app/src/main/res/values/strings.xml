@@ -1,6 +1,6 @@
 <resources>
     <!-- Existing strings -->
-    <string name="app_name">ProjectUI</string>
+    <string name="app_name">ParkSpot</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -31,4 +31,31 @@
     <string name="show_in_map">Show in Map</string>
     <string name="add_to_calendar">Add to Calendar</string>
     <string name="cancel_booking">Cancel Booking</string>
+
+    <!-- Profile -->
+    <string name="profile_photo_content_description">Profile photo</string>
+    <string name="change_photo">Change photo</string>
+    <string name="stat_total_listings">Total\nListings</string>
+    <string name="stat_active_listings">Active\nListings</string>
+    <string name="stat_bookings_made">Bookings\nMade</string>
+    <string name="account_info_title">Account</string>
+    <string name="personal_info_title">Personal</string>
+    <string name="label_email">Email</string>
+    <string name="label_member_since">Member since</string>
+    <string name="label_bio">Bio</string>
+    <string name="label_phone">Phone</string>
+    <string name="hint_bio">Tell others about you</string>
+    <string name="hint_phone">Phone number</string>
+    <string name="edit_profile">Edit profile</string>
+    <string name="save">Save</string>
+    <string name="profile_no_email">No email on file</string>
+    <string name="profile_bio_placeholder">No bio yet — tap Edit profile to add one.</string>
+    <string name="profile_phone_placeholder">Not added</string>
+    <string name="member_since_unknown">—</string>
+    <string name="profile_updated_toast">Profile saved</string>
+    <string name="role_badge_driver">🚗 Driver</string>
+    <string name="role_badge_owner">🏠 Spot Owner</string>
+    <string name="owner_banner_message">You have a Spot Owner account — switch to Owner Mode from the menu to manage listings.</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirm_message">Are you sure you want to log out?</string>
 </resources>
