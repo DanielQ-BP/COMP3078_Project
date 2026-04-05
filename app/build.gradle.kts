@@ -4,8 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     kotlin("kapt")
-    alias(libs.plugins.dagger.hilt)
-
 }
 
 // Load local.properties
@@ -31,6 +29,16 @@ android {
         // Add API key to BuildConfig
         val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+
+        // Stripe publishable key
+        val stripeKey = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY", "")
+        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"$stripeKey\"")
+
+        // ParkSpot backend (emulator: http://10.0.2.2:3000/ — trailing slash required for Retrofit)
+        val apiBaseUrl = localProperties.getProperty("API_BASE_URL", "http://10.0.2.2:3000/")
+            .trim()
+            .let { if (it.endsWith("/")) it else "$it/" }
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 
         // Add API key to manifest placeholders
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
@@ -63,6 +71,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
@@ -81,9 +90,6 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)
-    // Hilt (Dependency Injection)
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler) // Use 'kapt' instead of 'implementation' for the compiler
     // Required for lifecycleScope in Fragments
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
@@ -92,4 +98,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     // Gson for parsing Directions API response
     implementation("com.google.code.gson:gson:2.10.1")
+    // Stripe
+    implementation("com.stripe:stripe-android:20.+")
+
 }

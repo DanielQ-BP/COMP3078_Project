@@ -19,9 +19,12 @@ import androidx.lifecycle.lifecycleScope
 
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.comp3074_101384549.projectui.BuildConfig
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
+import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.databinding.FragmentHomeBinding
 
 import com.comp3074_101384549.projectui.repository.ListingRepository
@@ -33,14 +36,19 @@ import com.comp3074_101384549.projectui.utils.MapUtils
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var listingRepository: ListingRepository
+    private lateinit var authPreferences: AuthPreferences
 
     // If not using DI, you would need to instantiate or provide it here.
 
@@ -48,6 +56,9 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var listingAdapter: ListingAdapter
+    private var cachedListings: List<Listing> = emptyList()
+    private val markerListingMap: MutableMap<Marker, Listing> = mutableMapOf()
+    private var parkingIcon: BitmapDescriptor? = null
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1002
@@ -59,14 +70,17 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val db = AppDatabase.getDatabase(context)
         val listingDao = db.listingDao()
 
-        // TODO: replace with your real backend base URL when ready
+        authPreferences = AuthPreferences(context)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(authPreferences))
+            .build()
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://example.com/")
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         val apiService = retrofit.create(ApiService::class.java)
-
         listingRepository = ListingRepository(apiService, listingDao)
     }
 
@@ -80,8 +94,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
         super.onViewCreated(view, savedInstanceState)
+        parkingIcon = MapUtils.createParkingMarkerIcon(requireContext())
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
@@ -90,6 +104,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             // When a listing is clicked, navigate to details fragment
             val detailsFragment = ListingDetailsFragment().apply {
                 arguments = bundleOf(
+                    "listingId" to listing.id,
                     "address" to listing.address,
                     "price" to listing.pricePerHour,
                     "availability" to listing.availability,
@@ -109,26 +124,39 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val maxPriceInput = view.findViewById<EditText>(R.id.editTextMaxPrice)
         val searchButton = view.findViewById<Button>(R.id.buttonSearch)
 
-        // Load all listings on startup
-
-        loadAllListings()
-
-
         searchButton.setOnClickListener {
             val address = addressInput.text.toString().trim()
             val maxPrice = maxPriceInput.text.toString().toDoubleOrNull()
 
             // Perform search
-            lifecycleScope.launch {
-                val results = listingRepository.searchListings(address, maxPrice)
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    if (!isAdded) return@launch
 
-                if (results.isEmpty()) {
-                    Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
-                    updateListings(emptyList())
-                } else {
-                    Toast.makeText(requireContext(), "Found ${results.size} parking spot(s)", Toast.LENGTH_SHORT).show()
-                    updateListings(results)
+                    val userId = authPreferences.userId.first()
+                    if (userId == null) {
+                        if (isAdded) {
+                            Toast.makeText(requireContext(), "Please login to search listings", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
 
+                    val results = listingRepository.searchAllListings(address, maxPrice)
+
+                    if (!isAdded) return@launch
+
+                    cachedListings = results
+                    if (results.isEmpty()) {
+                        Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
+                        updateListings(emptyList())
+                    } else {
+                        Toast.makeText(requireContext(), "Found ${results.size} parking spot(s)", Toast.LENGTH_SHORT).show()
+                        updateListings(results)
+                    }
+                } catch (e: Exception) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Error searching listings", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -153,6 +181,28 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         val defaultLocation = LatLng(43.6532, -79.3832)
         MapUtils.moveCameraToPosition(map, defaultLocation, 12f)
+
+        map.setOnInfoWindowClickListener { marker ->
+            val listing = markerListingMap[marker] ?: return@setOnInfoWindowClickListener
+            val detailsFragment = ListingDetailsFragment().apply {
+                arguments = bundleOf(
+                    "listingId" to listing.id,
+                    "address" to listing.address,
+                    "price" to listing.pricePerHour,
+                    "availability" to listing.availability,
+                    "description" to listing.description
+                )
+            }
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, detailsFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        // If listings loaded before the map was ready, add their markers now
+        if (cachedListings.isNotEmpty()) {
+            updateMapMarkers(map, cachedListings)
+        }
     }
 
     override fun onResume() {
@@ -162,40 +212,67 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun loadAllListings() {
-        lifecycleScope.launch {
-            val listings = listingRepository.getAllListings()
-            updateListings(listings)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (!isAdded) return@launch
+
+                val userId = authPreferences.userId.first()
+                if (userId == null) {
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Please login to view listings", Toast.LENGTH_SHORT).show()
+                    }
+                    updateListings(emptyList())
+                    return@launch
+                }
+
+                val listings = listingRepository.getAllActiveListings()
+                cachedListings = listings
+                if (isAdded) {
+                    updateListings(listings)
+                }
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error loading listings", Toast.LENGTH_SHORT).show()
+                    updateListings(emptyList())
+                }
+            }
         }
     }
 
     private fun updateListings(listings: List<Listing>) {
+        if (!isAdded) return
+
+        // Show/hide empty state
+        val emptyState = view?.findViewById<View>(R.id.emptyState)
+        val recyclerView = view?.findViewById<View>(R.id.listViewListings)
+        if (listings.isEmpty()) {
+            emptyState?.visibility = View.VISIBLE
+            recyclerView?.visibility = View.GONE
+        } else {
+            emptyState?.visibility = View.GONE
+            recyclerView?.visibility = View.VISIBLE
+        }
+
         // Update RecyclerView
         listingAdapter.updateListings(listings)
 
-        // Update markers on the map
-        googleMap?.let { map ->
-            map.clear()
-            listings.forEach { listing ->
-                val latLng =
-                    MapUtils.getLatLngFromAddress(requireContext(), listing.address)
-                latLng?.let {
-                    MapUtils.addMarker(
-                        map,
-                        it,
-                        listing.address,
-                        "$${listing.pricePerHour}/hr"
-                    )
-                }
-            }
+        // Update markers on the map if it's already ready
+        googleMap?.let { map -> updateMapMarkers(map, listings) }
+    }
 
-            if (listings.isNotEmpty()) {
-                val firstLocation =
-                    MapUtils.getLatLngFromAddress(requireContext(), listings[0].address)
-                firstLocation?.let {
-                    MapUtils.moveCameraToPosition(map, it, 12f)
-                }
+    private fun updateMapMarkers(map: GoogleMap, listings: List<Listing>) {
+        map.clear()
+        markerListingMap.clear()
+        val icon = parkingIcon
+        listings.forEach { listing ->
+            if (listing.latitude != 0.0 || listing.longitude != 0.0) {
+                val latLng = LatLng(listing.latitude, listing.longitude)
+                val marker = MapUtils.addMarker(map, latLng, listing.address, "$${listing.pricePerHour}/hr • Tap for details", icon)
+                marker?.let { markerListingMap[it] = listing }
             }
         }
+        val first = listings.firstOrNull { it.latitude != 0.0 || it.longitude != 0.0 }
+        first?.let { MapUtils.moveCameraToPosition(map, LatLng(it.latitude, it.longitude), 12f) }
     }
 
     @SuppressLint("MissingPermission")

@@ -1,29 +1,37 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_profile"
-        android:title="Profile"
-        />
+        android:title="Profile" />
+    <item
+        android:id="@+id/nav_become_owner"
+        android:title="⭐ Become a Spot Owner"
+        android:visible="true" />
+    <item
+        android:id="@+id/nav_listings_created"
+        android:title="Create Listing"
+        android:visible="false" />
+    <item
+        android:id="@+id/nav_my_listings"
+        android:title="My Listings"
+        android:visible="false" />
+    <item
+        android:id="@+id/nav_listings_reserved"
+        android:title="My Reservations" />
+    <item
+        android:id="@+id/nav_payment_methods"
+        android:title="Payment methods" />
     <item
         android:id="@+id/nav_settings"
         android:title="Settings"
         android:icon="@android:drawable/ic_menu_manage" />
     <item
-        android:id="@+id/nav_listings_created"
-        android:title="Create Listing" />
+        android:id="@+id/nav_help"
+        android:title="Support / Help" />
     <item
-        android:id="@+id/nav_listings_reserved"
-        android:title="Listings reserved" />
-    <item
-        android:id="@+id/nav_my_listings"
-        android:title="MyListings">
-    </item>
-    <item
-        android:id="@+id/nav_payment_methods"
-        android:title="Payment methods" />
+        android:id="@+id/nav_admin_dashboard"
+        android:title="Admin Dashboard"
+        android:visible="false" />
     <item
         android:id="@+id/nav_logout"
         android:title="Logout" />
-    <item
-        android:id="@+id/nav_help"
-        android:title="Support / help" />
 </menu>

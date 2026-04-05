@@ -2,6 +2,9 @@
 <resources>
     <color name="parkspot_green">#1A5A2B</color>
     <color name="parkspot_dark_green">#10381B</color>
+    <color name="parkspot_owner_gold">#E6C35C</color>
+    <color name="profile_header_text_muted">#B3FFFFFF</color>
+    <color name="logout_error_red">#C62828</color>
 
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

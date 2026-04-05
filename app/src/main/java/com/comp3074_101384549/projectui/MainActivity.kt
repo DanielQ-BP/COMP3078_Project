@@ -19,22 +19,19 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialize AuthPreferences (NEW)
         authPreferences = AuthPreferences(applicationContext)
 
-        // Check for existing session and redirect immediately (NEW LOGIC)
         lifecycleScope.launch {
             val token = authPreferences.authToken.first()
             if (token != null) {
-                // Token found, user is already logged in. Redirect to Home.
-                startActivity(Intent(this@MainActivity, HomeActivity::class.java))
+                val role = authPreferences.role.first() ?: "user"
+                val dest = if (role == "admin") AdminActivity::class.java else HomeActivity::class.java
+                startActivity(Intent(this@MainActivity, dest))
                 finish()
                 return@launch
             }
         }
-        // END NEW LOGIC
 
-        // Existing button listeners
         binding.registerButton.setOnClickListener {
             val intent = Intent(this, RegistrationActivity::class.java)
             startActivity(intent)

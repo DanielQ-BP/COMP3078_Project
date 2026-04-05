@@ -1,212 +1,506 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="@color/gray_light"
+    android:fillViewport="true">
 
-    <androidx.cardview.widget.CardView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp">
+        android:orientation="vertical">
 
+        <!-- Green header -->
         <LinearLayout
-            android:orientation="vertical"
-            android:padding="24dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:background="@color/parkspot_green"
+            android:elevation="6dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="32dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="28dp">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/profileImage"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:src="@android:drawable/sym_def_app_icon"
-                android:contentDescription="Profile Image"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="12dp"
-                app:shapeAppearanceOverlay="@style/RoundedCorner"
-                app:strokeColor="#DDDDDD"
-                app:strokeWidth="2dp" />
-
-            <!-- NEW: Change photo button -->
-            <Button
-                android:id="@+id/btnChangePhoto"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
+            <FrameLayout
+                android:id="@+id/profileAvatarContainer"
+                android:layout_width="112dp"
+                android:layout_height="112dp"
                 android:layout_marginBottom="16dp"
-                android:text="Change Photo" />
+                android:contentDescription="@string/profile_photo_content_description">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/profileImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/profile_photo_content_description"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/sym_def_app_icon"
+                    app:shapeAppearanceOverlay="@style/RoundedCorner"
+                    app:strokeColor="@color/white"
+                    app:strokeWidth="3dp" />
+
+                <FrameLayout
+                    android:id="@+id/cameraOverlay"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/bg_camera_overlay"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="6dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/change_photo"
+                        android:src="@android:drawable/ic_menu_camera"
+                        app:tint="@color/parkspot_green" />
+                </FrameLayout>
+            </FrameLayout>
 
             <TextView
-                android:id="@+id/usernameTextView"
+                android:id="@+id/headerUsername"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="John Doe"
-                android:textSize="26sp"
+                android:layout_marginBottom="4dp"
+                android:textColor="@color/white"
+                android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#1A1A1A"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="8dp" />
+                tools:text="jane_doe" />
 
-            <RatingBar
-                android:id="@+id/ratingBar"
-                style="?android:attr/ratingBarStyleSmall"
-                android:numStars="5"
-                android:rating="4.5"
-                android:isIndicator="true"
+            <TextView
+                android:id="@+id/headerEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="12dp"
+                android:textColor="@color/profile_header_text_muted"
+                android:textSize="14sp"
+                tools:text="jane@email.com" />
+
+            <TextView
+                android:id="@+id/roleBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:background="@drawable/bg_role_badge_driver"
+                tools:text="🚗 Driver"
+                tools:textColor="@color/white" />
+        </LinearLayout>
+
+        <!-- Stats row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/statTotalListings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/parkspot_green"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        tools:text="3" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/stat_total_listings"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/statActiveListings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/parkspot_green"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        tools:text="2" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/stat_active_listings"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/statBookingsMade"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/parkspot_green"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        tools:text="5" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/stat_bookings_made"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Account info -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
-                android:id="@+id/readOnlyContainer"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:src="@android:drawable/ic_menu_info_details"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
-                        app:tint="#666666" />
-
-                    <TextView
-                        android:id="@+id/nameReadOnly"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Name: –"
-                        android:textSize="16sp"
-                        android:textColor="#333333" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:src="@android:drawable/ic_menu_my_calendar"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
-                        app:tint="#666666" />
-
-                    <TextView
-                        android:id="@+id/ageReadOnly"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Age: –"
-                        android:textSize="16sp"
-                        android:textColor="#333333" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="20dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:src="@android:drawable/ic_menu_edit"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginEnd="12dp"
-                        app:tint="#666666" />
-
-                    <TextView
-                        android:id="@+id/descriptionReadOnly"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Description: –"
-                        android:textSize="16sp"
-                        android:textColor="#333333" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/editContainer"
-                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/nameEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Name" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/ageEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Age"
-                        android:inputType="number" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/descriptionEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Description"
-                        android:inputType="textMultiLine"
-                        android:minLines="3" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <Button
-                    android:id="@+id/saveButton"
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Save Profile"
-                    android:layout_gravity="center_horizontal"
-                    style="@style/Widget.MaterialComponents.Button"
-                    android:backgroundTint="#4CAF50" />
-            </LinearLayout>
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/account_info_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/editProfileButton"
-                android:text="Edit Profile"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.38"
+                        android:text="@string/label_email"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/accountEmailValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.62"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        tools:text="user@parkspot.app" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.38"
+                        android:text="@string/label_member_since"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/memberSinceValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.62"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        tools:text="Apr 2026" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Personal info -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:textColor="#6A1B9A" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-</ScrollView>
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/personal_info_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- View mode -->
+                <LinearLayout
+                    android:id="@+id/personalViewGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/label_bio"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/bioDisplay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:lineSpacingExtra="2dp"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        tools:text="I love finding great parking spots downtown." />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/label_phone"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/phoneDisplay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        tools:text="+1 555 0100" />
+                </LinearLayout>
+
+                <!-- Edit mode -->
+                <LinearLayout
+                    android:id="@+id/personalEditGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/hint_bio"
+                        app:boxStrokeColor="@color/parkspot_green"
+                        app:hintTextColor="@color/parkspot_green">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/bioEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top|start"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:minLines="3"
+                            android:maxLines="6" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/hint_phone"
+                        app:boxStrokeColor="@color/parkspot_green"
+                        app:hintTextColor="@color/parkspot_green">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/phoneEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="phone" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonCancelEdit"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/cancel" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonSaveProfile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/parkspot_green"
+                            android:text="@string/save"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonEditProfile"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/edit_profile"
+                    android:textColor="@color/parkspot_green"
+                    app:strokeColor="@color/parkspot_green" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E0E0E0"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Support"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonSubmitTicket"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Submit a Support Ticket"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonViewTickets"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="View My Tickets"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginBottom="24dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Owner account banner -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/ownerModeBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#E8F5E9"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/ownerBannerText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="14dp"
+                android:text="@string/owner_banner_message"
+                android:textColor="@color/parkspot_dark_green"
+                android:textSize="13sp" />
+        </androidx.cardview.widget.CardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonLogout"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/logout"
+            android:textColor="@color/logout_error_red"
+            app:strokeColor="@color/logout_error_red" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

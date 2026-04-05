@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/parkspot_dark_green"
+        android:orientation="vertical"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ParkSpot"
+            android:textColor="#CCFFFFFF"
+            android:textSize="12sp"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Spot Owner Terms &amp; Conditions"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Last updated: April 1, 2026  ·  Version 1.0"
+            android:textColor="#AAFFFFFF"
+            android:textSize="11sp"
+            android:layout_marginTop="6dp" />
+
+    </LinearLayout>
+
+    <!-- Scrollable content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Intro -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Please read these Terms and Conditions carefully before registering as a Spot Owner on the ParkSpot platform. By completing Spot Owner registration, you confirm that you have read, understood, and agree to be bound by all of the following terms."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 1 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Eligibility &amp; Account"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1.1  You must be at least 18 years of age to register as a Spot Owner.\n\n1.2  You must have the legal right, authority, or permission to rent out the parking space you list. This includes but is not limited to: ownership of the property, written landlord consent, or condominium board approval.\n\n1.3  You are solely responsible for ensuring your listing complies with all applicable local bylaws, zoning regulations, and municipal parking rules.\n\n1.4  ParkSpot reserves the right to suspend or terminate your Spot Owner account at any time if any of the above conditions are found to be violated."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 2 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. Listing Responsibilities"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2.1  All information you provide in a listing — including address, pricing, availability, and description — must be accurate, complete, and not misleading.\n\n2.2  You must keep your listing up to date. If a space becomes unavailable, you are required to deactivate or remove the listing promptly.\n\n2.3  You may not list a space that is already reserved for another purpose during the listed availability window.\n\n2.4  ParkSpot reserves the right to remove any listing that violates these terms or is reported by users as inaccurate."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 3 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Payments &amp; Fees"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3.1  Payments from Drivers are processed securely through ParkSpot's payment partner (Stripe). Payouts to Spot Owners are issued after a booking is completed.\n\n3.2  ParkSpot charges a platform service fee of 15% on all completed bookings. This fee is deducted from the total payout before it is transferred to you.\n\n3.3  In the event of a dispute or refund initiated by a Driver, ParkSpot reserves the right to withhold or reverse a payout pending resolution.\n\n3.4  You are solely responsible for reporting any income earned through ParkSpot to the appropriate tax authorities."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 4 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Driver Conduct &amp; Overstays"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4.1  Drivers are granted a 15-minute grace period after their reservation end time before overstay penalties are applied.\n\n4.2  Overstay penalty fees are automatically calculated and charged to the Driver. A portion of this fee is passed to the Spot Owner as compensation.\n\n4.3  You may report misuse of your property through the in-app reporting tool. ParkSpot will investigate all reports and may escalate to towing or other actions where warranted.\n\n4.4  ParkSpot is not liable for any damage to your property caused by a Driver. We recommend documenting your space with photos before and after each booking."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 5 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="5. Cancellations"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="5.1  You may not cancel a confirmed booking less than 2 hours before the start time except in cases of emergency.\n\n5.2  Repeated or unexplained cancellations may result in reduced listing visibility or account suspension.\n\n5.3  If you cancel a confirmed booking, the Driver will receive a full refund and ParkSpot may apply a cancellation penalty to your account."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 6 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="6. Privacy &amp; Data"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="6.1  By registering as a Spot Owner, you consent to ParkSpot storing and processing your personal information, including your name, contact number, and property address, for the purposes of operating the platform.\n\n6.2  Your contact details will not be shared publicly. Drivers will only see the listing address and pricing.\n\n6.3  ParkSpot may use anonymized and aggregated data from your listings for analytics and platform improvement."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 7 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="7. Limitation of Liability"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="7.1  ParkSpot is a marketplace platform and is not a party to any agreement between a Spot Owner and a Driver.\n\n7.2  ParkSpot shall not be held liable for any loss, damage, theft, injury, or dispute arising from a parking transaction facilitated through the platform.\n\n7.3  Your use of the platform is at your own risk. ParkSpot provides the service on an 'as is' basis without warranties of any kind."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Section 8 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8. Termination"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/parkspot_green"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8.1  You may deactivate your Spot Owner account at any time by switching back to Driver mode within the app.\n\n8.2  ParkSpot reserves the right to terminate your Spot Owner privileges with or without notice if you breach any of these terms.\n\n8.3  Upon termination, all active listings will be deactivated and pending payouts will be settled within 14 business days."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Acknowledgement box -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F0F7F2">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="By tapping &quot;I Accept&quot; below, you confirm that you have read and agree to all of the above Terms and Conditions and that all information you have provided is truthful and accurate."
+                    android:textSize="13sp"
+                    android:textColor="@color/parkspot_dark_green"
+                    android:lineSpacingExtra="4dp"
+                    android:textStyle="italic" />
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom buttons — always visible -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="@color/white"
+        android:elevation="8dp">
+
+        <Button
+            android:id="@+id/buttonDeclineTerms"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Decline"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="@color/parkspot_green" />
+
+        <Button
+            android:id="@+id/buttonAcceptTerms"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="I Accept"
+            android:backgroundTint="@color/parkspot_green"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</LinearLayout>
