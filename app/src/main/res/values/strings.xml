@@ -58,4 +58,14 @@
     <string name="owner_banner_message">You have a Spot Owner account — switch to Owner Mode from the menu to manage listings.</string>
     <string name="logout">Logout</string>
     <string name="logout_confirm_message">Are you sure you want to log out?</string>
+
+    <!-- Admin dispute resolution -->
+    <string name="admin_resolve_dispute_button">Resolve dispute: %s</string>
+    <string name="admin_resolve_dispute_title">How should this reservation be settled?</string>
+    <string name="admin_outcome_cancelled">Cancel reservation (set booking to cancelled)</string>
+    <string name="admin_outcome_completed">Complete reservation (set booking to completed)</string>
+    <string name="admin_outcome_unchanged">Leave booking status as-is (record dispute closed only)</string>
+    <string name="admin_resolve_confirm">Resolve</string>
+    <string name="admin_resolve_success">Dispute resolved</string>
+    <string name="admin_resolve_failed">Could not resolve dispute</string>
 </resources>

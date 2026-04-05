@@ -7,19 +7,47 @@ const router = express.Router();
 // POST /tickets/create
 router.post('/create', authenticateToken, async (req, res) => {
     try {
-        const { subject, description } = req.body;
+        const { subject, description, category, bookingReferenceCode } = req.body;
         const userId = req.user.id;
 
         if (!subject || !description) {
             return res.status(400).json({ error: 'Subject and description are required' });
         }
 
+        const cat = category === 'conflict' ? 'conflict' : 'general';
+        let bookingId = null;
+
+        if (cat === 'conflict') {
+            const code = (bookingReferenceCode || '').trim().toUpperCase();
+            if (!code) {
+                return res.status(400).json({
+                    error: 'Reservation code is required to report a dispute. Find it in My Reservations after you book.',
+                });
+            }
+
+            const bookingResult = await pool.query(
+                `SELECT id, user_id FROM bookings WHERE UPPER(TRIM(reference_code)) = $1`,
+                [code]
+            );
+
+            if (bookingResult.rows.length === 0) {
+                return res.status(400).json({ error: 'No reservation matches that code. Check and try again.' });
+            }
+
+            const booking = bookingResult.rows[0];
+            if (booking.user_id !== userId) {
+                return res.status(403).json({ error: 'You can only open a dispute for your own reservations.' });
+            }
+
+            bookingId = booking.id;
+        }
+
         const result = await pool.query(`
-            INSERT INTO tickets (user_id, subject, description)
-            VALUES ($1, $2, $3)
+            INSERT INTO tickets (user_id, subject, description, category, booking_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id, user_id as "userId", subject, description,
-                      status, created_at as "createdAt"
-        `, [userId, subject, description]);
+                      status, category, booking_id as "bookingId", created_at as "createdAt"
+        `, [userId, subject, description, cat, bookingId]);
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -33,7 +61,8 @@ router.get('/my', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT id, user_id as "userId", subject, description,
-                   status, created_at as "createdAt", updated_at as "updatedAt"
+                   status, category, booking_id as "bookingId",
+                   created_at as "createdAt", updated_at as "updatedAt"
             FROM tickets
             WHERE user_id = $1
             ORDER BY created_at DESC
@@ -78,6 +107,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         const ticketResult = await pool.query(`
             SELECT t.id, t.user_id as "userId", u.username,
                    t.subject, t.description, t.status,
+                   t.category, t.booking_id as "bookingId",
                    t.created_at as "createdAt", t.updated_at as "updatedAt"
             FROM tickets t
             JOIN users u ON t.user_id = u.id

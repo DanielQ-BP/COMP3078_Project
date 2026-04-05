@@ -22,9 +22,11 @@ import com.comp3074_101384549.projectui.BuildConfig
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
+import com.comp3074_101384549.projectui.data.remote.ApiClient
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.model.BookingEntity
+import com.comp3074_101384549.projectui.model.CreateBookingRequest
 import com.comp3074_101384549.projectui.repository.BookingRepository
 import retrofit2.HttpException
 import com.comp3074_101384549.projectui.utils.DirectionsApiHelper
@@ -41,7 +43,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Polyline
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
@@ -231,8 +236,25 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                     return@launch
                 }
 
+                val zone = ZoneId.systemDefault()
+                val startZdt = LocalDate.parse(date).atTime(LocalTime.parse(startTime)).atZone(zone)
+                val endZdt = LocalDate.parse(date).atTime(LocalTime.parse(endTime)).atZone(zone)
+                val isoFmt = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                val startIso = startZdt.format(isoFmt)
+                val endIso = endZdt.format(isoFmt)
+
+                val api = ApiClient.api(requireContext())
+                val response = api.createBooking(
+                    CreateBookingRequest(
+                        listingId = listingId,
+                        startTime = startIso,
+                        endTime = endIso,
+                        totalPrice = totalPrice,
+                    )
+                )
+
                 val booking = BookingEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = response.id,
                     listingId = listingId,
                     userId = userId,
                     address = address,
@@ -241,20 +263,23 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                     startTime = startTime,
                     endTime = endTime,
                     totalPrice = totalPrice,
-                    status = "confirmed"
+                    status = response.status.ifEmpty { "confirmed" },
+                    referenceCode = response.referenceCode,
                 )
 
                 bookingRepository.createBooking(booking)
 
                 if (isAdded) {
-                    Toast.makeText(requireContext(), "Booking confirmed!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Booking confirmed! Reservation code: ${response.referenceCode}\n(Keep this code to report a dispute in Support.)",
+                        Toast.LENGTH_LONG,
+                    ).show()
 
-                    // Navigate back to home
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.homeFragmentContainer, com.comp3074_101384549.projectui.ui.home.HomeFragment())
                         .commit()
 
-                    // Update bottom nav
                     (activity as? com.comp3074_101384549.projectui.HomeActivity)?.let { homeActivity ->
                         homeActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)?.selectedItemId = R.id.homeFragment
                     }
@@ -269,7 +294,11 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                 }
             } catch (e: Exception) {
                 if (isAdded) {
-                    Toast.makeText(requireContext(), "Error creating booking: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Could not complete booking. The spot must exist on the server and times must be valid. ${e.message}",
+                        Toast.LENGTH_LONG,
+                    ).show()
                 }
             }
         }
