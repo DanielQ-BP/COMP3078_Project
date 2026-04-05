@@ -18,6 +18,7 @@ import com.comp3074_101384549.projectui.model.PaymentIntentResponse
 import com.comp3074_101384549.projectui.model.Ticket
 import com.comp3074_101384549.projectui.model.TicketResponse
 import com.comp3074_101384549.projectui.model.TicketRespondRequest
+import com.comp3074_101384549.projectui.model.UpdateTicketStatusRequest
 import com.comp3074_101384549.projectui.model.Notification
 import com.comp3074_101384549.projectui.model.UpdateBookingStatusRequest
 import com.comp3074_101384549.projectui.model.UpdateUserRequest
@@ -144,4 +145,13 @@ interface ApiService {
         @Path("id") ticketId: String,
         @Body request: TicketRespondRequest
     ): TicketResponse
+
+    @GET("tickets/all")
+    suspend fun getAllTickets(): List<Ticket>
+
+    @PUT("tickets/{id}/status")
+    suspend fun updateTicketStatus(
+        @Path("id") ticketId: String,
+        @Body request: UpdateTicketStatusRequest
+    ): Ticket
 }

@@ -19,6 +19,7 @@ import com.comp3074_101384549.projectui.ui.payment.PaymentFragment
 import com.comp3074_101384549.projectui.ui.profile.ProfileFragment
 import com.comp3074_101384549.projectui.ui.reservations.ReservedListingsFragment
 import com.comp3074_101384549.projectui.ui.settings.SettingsFragment
+import com.comp3074_101384549.projectui.ui.admin.AdminDashboardFragment
 import com.comp3074_101384549.projectui.ui.support.SupportFragment
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -72,19 +73,24 @@ class HomeActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val hasOwner = authPreferences.hasOwnerAccount.first()
             val mode = authPreferences.currentMode.first()
+            val role = authPreferences.role.first()
             val menu = binding.navigationView.menu
 
+            val isAdmin = role?.lowercase() == "admin"
             val inOwnerMode = mode == AuthPreferences.MODE_OWNER
 
-            menu.findItem(R.id.nav_listings_created)?.isVisible = inOwnerMode
-            menu.findItem(R.id.nav_my_listings)?.isVisible = inOwnerMode
+            menu.findItem(R.id.nav_admin_dashboard)?.isVisible = isAdmin
+            menu.findItem(R.id.nav_listings_created)?.isVisible = inOwnerMode && !isAdmin
+            menu.findItem(R.id.nav_my_listings)?.isVisible = inOwnerMode && !isAdmin
+            menu.findItem(R.id.nav_become_owner)?.isVisible = !isAdmin
 
-            val switchItem = menu.findItem(R.id.nav_become_owner)
-            switchItem?.isVisible = true
-            switchItem?.title = when {
-                !hasOwner -> "⭐ Become a Spot Owner"
-                !inOwnerMode -> "Switch to Owner Mode"
-                else -> "Switch to Driver Mode"
+            if (!isAdmin) {
+                val switchItem = menu.findItem(R.id.nav_become_owner)
+                switchItem?.title = when {
+                    !hasOwner -> "⭐ Become a Spot Owner"
+                    !inOwnerMode -> "Switch to Owner Mode"
+                    else -> "Switch to Driver Mode"
+                }
             }
         }
     }
@@ -187,6 +193,12 @@ class HomeActivity : AppCompatActivity() {
 
                 R.id.nav_settings -> {
                     openFragment(SettingsFragment())
+                    binding.drawerLayout.closeDrawers()
+                    true
+                }
+
+                R.id.nav_admin_dashboard -> {
+                    openFragment(AdminDashboardFragment())
                     binding.drawerLayout.closeDrawers()
                     true
                 }
