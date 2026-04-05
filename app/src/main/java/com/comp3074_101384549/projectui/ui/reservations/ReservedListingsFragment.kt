@@ -12,14 +12,20 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.comp3074_101384549.projectui.BuildConfig
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
+import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.model.BookingEntity
 import com.comp3074_101384549.projectui.repository.BookingRepository
 import com.comp3074_101384549.projectui.ui.adapter.BookingAdapter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class ReservedListingsFragment : Fragment() {
 
@@ -34,8 +40,19 @@ class ReservedListingsFragment : Fragment() {
 
         val db = AppDatabase.getDatabase(context)
         val bookingDao = db.bookingDao()
-        bookingRepository = BookingRepository(bookingDao)
+
         authPreferences = AuthPreferences(context)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(authPreferences))
+            .build()
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val apiService = retrofit.create(ApiService::class.java)
+
+        bookingRepository = BookingRepository(apiService, bookingDao)
     }
 
     override fun onCreateView(

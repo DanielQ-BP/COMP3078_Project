@@ -7,34 +7,52 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.comp3074_101384549.projectui.BuildConfig
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
+import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
+import com.comp3074_101384549.projectui.model.PaymentIntentRequest
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class PaymentFragment : Fragment() {
 
+    companion object {
+        fun newInstance(totalPrice: Double) = PaymentFragment().apply {
+            arguments = android.os.Bundle().apply {
+                putDouble("totalPrice", totalPrice)
+            }
+        }
+    }
+
     private lateinit var paymentSheet: PaymentSheet
     private lateinit var authPreferences: AuthPreferences
+    private lateinit var apiService: ApiService
     private lateinit var payButton: Button
     private lateinit var progressBar: ProgressBar
+    private var totalPrice: Double = 0.0
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         authPreferences = AuthPreferences(context)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(authPreferences))
+            .build()
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        apiService = retrofit.create(ApiService::class.java)
     }
 
     override fun onCreateView(
@@ -47,8 +65,12 @@ class PaymentFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        totalPrice = arguments?.getDouble("totalPrice") ?: 0.0
+
         payButton = view.findViewById(R.id.payButton)
         progressBar = view.findViewById(R.id.progressBar)
+        view.findViewById<TextView>(R.id.textAmount).text =
+            "Amount: $${String.format("%.2f", totalPrice)}"
 
         paymentSheet = PaymentSheet(this, ::onPaymentSheetResult)
 
@@ -63,31 +85,12 @@ class PaymentFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val token = authPreferences.authToken.first() ?: ""
-
-                val clientSecret = withContext(Dispatchers.IO) {
-                    val client = OkHttpClient.Builder()
-                        .connectTimeout(30, TimeUnit.SECONDS)
-                        .readTimeout(30, TimeUnit.SECONDS)
-                        .build()
-
-                    val request = Request.Builder()
-                        .url("http://10.0.2.2:3000/payments/create-payment-intent")
-                        .addHeader("Authorization", "Bearer $token")
-                        .post(
-                            "{\"amount\":1999,\"currency\":\"usd\"}"
-                                .toRequestBody("application/json".toMediaType())
-                        )
-                        .build()
-
-                    val response = client.newCall(request).execute()
-                    val body = response.body?.string().orEmpty()
-                    JSONObject(body).getString("clientSecret")
-                }
-
+                val amountCents = (totalPrice * 100).toInt().coerceAtLeast(50) // Stripe min is 50 cents
+                val response = apiService.createPaymentIntent(
+                    PaymentIntentRequest(amount = amountCents, currency = "usd")
+                )
                 val config = PaymentSheet.Configuration(merchantDisplayName = "ParkSpot")
-                paymentSheet.presentWithPaymentIntent(clientSecret, config)
-
+                paymentSheet.presentWithPaymentIntent(response.clientSecret, config)
             } catch (e: Exception) {
                 if (isAdded) {
                     Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -105,11 +108,11 @@ class PaymentFragment : Fragment() {
         if (!isAdded) return
         when (result) {
             is PaymentSheetResult.Completed ->
-                Toast.makeText(requireContext(), "✅ Payment successful!", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Payment successful!", Toast.LENGTH_LONG).show()
             is PaymentSheetResult.Canceled ->
                 Toast.makeText(requireContext(), "Payment cancelled.", Toast.LENGTH_SHORT).show()
             is PaymentSheetResult.Failed ->
-                Toast.makeText(requireContext(), "❌ Failed: ${result.error.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Failed: ${result.error.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 }

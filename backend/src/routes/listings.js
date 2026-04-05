@@ -75,11 +75,11 @@ router.post('/create', authenticateToken, async (req, res) => {
 
         const result = await pool.query(`
             INSERT INTO listings (id, user_id, address, price_per_hour, availability, description, is_active, latitude, longitude)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id, user_id as "userId", address, price_per_hour as "pricePerHour",
                       availability, description, is_active as "isActive",
                       latitude, longitude, created_at as "createdAt"
-        `, [id || require('uuid').v4(), userId || req.user.id, address, pricePerHour, availability, description, isActive !== false, latitude, longitude]);
+        `, [id || null, userId || req.user.id, address, pricePerHour, availability, description, isActive !== false, latitude, longitude]);
 
         res.status(201).json(result.rows[0]);
     } catch (error) {

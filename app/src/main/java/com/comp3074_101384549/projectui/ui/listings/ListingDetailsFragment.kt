@@ -23,11 +23,17 @@ import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiClient
+import com.comp3074_101384549.projectui.data.remote.ApiService
+import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.model.BookingEntity
 import com.comp3074_101384549.projectui.model.CreateBookingRequest
 import com.comp3074_101384549.projectui.repository.BookingRepository
+import retrofit2.HttpException
 import com.comp3074_101384549.projectui.utils.DirectionsApiHelper
 import com.comp3074_101384549.projectui.utils.MapUtils
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.GoogleMap
@@ -65,8 +71,17 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
         super.onAttach(context)
 
         val db = AppDatabase.getDatabase(context)
-        bookingRepository = BookingRepository(db.bookingDao())
         authPreferences = AuthPreferences(context)
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(authPreferences))
+            .build()
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val apiService = retrofit.create(ApiService::class.java)
+        bookingRepository = BookingRepository(apiService, db.bookingDao())
     }
 
     override fun onCreateView(
@@ -268,6 +283,14 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                     (activity as? com.comp3074_101384549.projectui.HomeActivity)?.let { homeActivity ->
                         homeActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)?.selectedItemId = R.id.homeFragment
                     }
+                }
+            } catch (e: HttpException) {
+                if (isAdded) {
+                    val msg = if (e.code() == 409)
+                        "This spot is already booked for the selected time. Please choose a different time."
+                    else
+                        "Booking failed: ${e.message()}"
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 if (isAdded) {

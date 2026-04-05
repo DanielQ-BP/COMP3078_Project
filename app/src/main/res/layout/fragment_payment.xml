@@ -15,9 +15,10 @@
         android:layout_marginBottom="8dp" />
 
     <TextView
+        android:id="@+id/textAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Amount: $19.99"
+        android:text="Amount: $0.00"
         android:textSize="16sp"
         android:layout_marginBottom="32dp" />
 

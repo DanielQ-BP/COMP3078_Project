@@ -1,13 +1,6 @@
 package com.comp3074_101384549.projectui.model
 
-data class CreateBookingRequest(
-    val listingId: String,
-    val startTime: String,
-    val endTime: String,
-    val totalPrice: Double,
-)
-
-data class CreateBookingResponse(
+data class Booking(
     val id: String,
     val listingId: String,
     val userId: String,
@@ -15,7 +8,9 @@ data class CreateBookingResponse(
     val endTime: String,
     val totalPrice: Double,
     val status: String,
-    val referenceCode: String,
+    val address: String = "",
+    val pricePerHour: Double = 0.0,
+    val referenceCode: String = ""
 ) {
     fun toBookingEntity(): BookingEntity {
         val date = if (startTime.length >= 10) startTime.take(10) else startTime
@@ -23,14 +18,15 @@ data class CreateBookingResponse(
             id = id,
             listingId = listingId,
             userId = userId,
-            address = "",
-            pricePerHour = 0.0,
+            address = address,
+            pricePerHour = pricePerHour,
             bookingDate = date,
             startTime = startTime,
             endTime = endTime,
             totalPrice = totalPrice,
             status = status,
             referenceCode = referenceCode,
+            createdAt = System.currentTimeMillis()
         )
     }
 }

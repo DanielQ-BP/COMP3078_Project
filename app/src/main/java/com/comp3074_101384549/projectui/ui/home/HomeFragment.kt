@@ -36,7 +36,9 @@ import com.comp3074_101384549.projectui.utils.MapUtils
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -55,6 +57,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private val binding get() = _binding!!
     private lateinit var listingAdapter: ListingAdapter
     private var cachedListings: List<Listing> = emptyList()
+    private val markerListingMap: MutableMap<Marker, Listing> = mutableMapOf()
+    private var parkingIcon: BitmapDescriptor? = null
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1002
@@ -90,8 +94,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
         super.onViewCreated(view, savedInstanceState)
+        parkingIcon = MapUtils.createParkingMarkerIcon(requireContext())
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.mapView) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
@@ -178,6 +182,23 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val defaultLocation = LatLng(43.6532, -79.3832)
         MapUtils.moveCameraToPosition(map, defaultLocation, 12f)
 
+        map.setOnInfoWindowClickListener { marker ->
+            val listing = markerListingMap[marker] ?: return@setOnInfoWindowClickListener
+            val detailsFragment = ListingDetailsFragment().apply {
+                arguments = bundleOf(
+                    "listingId" to listing.id,
+                    "address" to listing.address,
+                    "price" to listing.pricePerHour,
+                    "availability" to listing.availability,
+                    "description" to listing.description
+                )
+            }
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.homeFragmentContainer, detailsFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
         // If listings loaded before the map was ready, add their markers now
         if (cachedListings.isNotEmpty()) {
             updateMapMarkers(map, cachedListings)
@@ -241,10 +262,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private fun updateMapMarkers(map: GoogleMap, listings: List<Listing>) {
         map.clear()
+        markerListingMap.clear()
+        val icon = parkingIcon
         listings.forEach { listing ->
             if (listing.latitude != 0.0 || listing.longitude != 0.0) {
                 val latLng = LatLng(listing.latitude, listing.longitude)
-                MapUtils.addMarker(map, latLng, listing.address, "$${listing.pricePerHour}/hr")
+                val marker = MapUtils.addMarker(map, latLng, listing.address, "$${listing.pricePerHour}/hr • Tap for details", icon)
+                marker?.let { markerListingMap[it] = listing }
             }
         }
         val first = listings.firstOrNull { it.latitude != 0.0 || it.longitude != 0.0 }
