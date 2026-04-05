@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     end_time TIMESTAMP NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
+    reference_code VARCHAR(32) UNIQUE,
+    dispute_resolution_outcome VARCHAR(30),
+    dispute_resolved_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -74,6 +77,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     subject VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+    category VARCHAR(20) NOT NULL DEFAULT 'general' CHECK (category IN ('general', 'conflict')),
+    booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -90,3 +95,4 @@ CREATE TABLE IF NOT EXISTS ticket_responses (
 
 CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_responses_ticket_id ON ticket_responses(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_booking_id ON tickets(booking_id);

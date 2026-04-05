@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -14,6 +15,10 @@ async function notify(userId, title, message) {
     } catch (err) {
         console.error('Failed to create notification:', err.message);
     }
+}
+
+function generateReferenceCode() {
+    return `PS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 // GET /bookings/user/:userId - Get user's bookings
@@ -48,6 +53,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
             SELECT b.id, b.listing_id as "listingId", b.user_id as "userId",
                    b.start_time as "startTime", b.end_time as "endTime",
                    b.total_price as "totalPrice", b.status,
+                   b.reference_code as "referenceCode",
                    l.address, l.price_per_hour as "pricePerHour"
             FROM bookings b
             JOIN listings l ON b.listing_id = l.id
@@ -71,6 +77,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             SELECT b.id, b.listing_id as "listingId", b.user_id as "userId",
                    b.start_time as "startTime", b.end_time as "endTime",
                    b.total_price as "totalPrice", b.status,
+                   b.reference_code as "referenceCode",
                    l.address, l.price_per_hour as "pricePerHour",
                    l.latitude, l.longitude
             FROM bookings b
@@ -95,6 +102,10 @@ router.post('/create', authenticateToken, async (req, res) => {
         const { listingId, startTime, endTime, totalPrice } = req.body;
         const userId = req.user.id;
 
+        if (!listingId || !startTime || !endTime || totalPrice == null) {
+            return res.status(400).json({ error: 'listingId, startTime, endTime, and totalPrice are required' });
+        }
+
         // Check for conflicting bookings on the same listing
         const conflict = await pool.query(`
             SELECT COUNT(*) FROM bookings
@@ -107,29 +118,46 @@ router.post('/create', authenticateToken, async (req, res) => {
             return res.status(409).json({ error: 'This spot is already booked for the selected time.' });
         }
 
-        const result = await pool.query(`
-            INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status)
-            VALUES ($1, $2, $3, $4, $5, 'confirmed')
-            RETURNING id, listing_id as "listingId", user_id as "userId",
-                      start_time as "startTime", end_time as "endTime",
-                      total_price as "totalPrice", status
-        `, [listingId, userId, startTime, endTime, totalPrice]);
+        let lastError;
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const referenceCode = generateReferenceCode();
+            try {
+                const result = await pool.query(`
+                    INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status, reference_code)
+                    VALUES ($1, $2, $3, $4, $5, 'confirmed', $6)
+                    RETURNING id, listing_id as "listingId", user_id as "userId",
+                              start_time as "startTime", end_time as "endTime",
+                              total_price as "totalPrice", status, reference_code as "referenceCode"
+                `, [listingId, userId, startTime, endTime, totalPrice, referenceCode]);
 
-        // Notify owner and booker
-        const listingRes = await pool.query(
-            'SELECT user_id, address FROM listings WHERE id = $1', [listingId]
-        );
-        if (listingRes.rows.length > 0) {
-            const { user_id: ownerId, address } = listingRes.rows[0];
-            await notify(ownerId, 'New Booking!',
-                `Your spot at ${address} has been booked.`);
-            await notify(userId, 'Booking Confirmed',
-                `Your booking at ${address} is confirmed. Enjoy your spot!`);
+                // Notify owner and booker
+                const listingRes = await pool.query(
+                    'SELECT user_id, address FROM listings WHERE id = $1', [listingId]
+                );
+                if (listingRes.rows.length > 0) {
+                    const { user_id: ownerId, address } = listingRes.rows[0];
+                    await notify(ownerId, 'New Booking!',
+                        `Your spot at ${address} has been booked.`);
+                    await notify(userId, 'Booking Confirmed',
+                        `Your booking at ${address} is confirmed. Enjoy your spot!`);
+                }
+
+                return res.status(201).json(result.rows[0]);
+            } catch (error) {
+                lastError = error;
+                if (error.code === '23505') {
+                    continue;
+                }
+                throw error;
+            }
         }
-
-        res.status(201).json(result.rows[0]);
+        console.error('Create booking error (reference collision):', lastError);
+        res.status(500).json({ error: 'Failed to assign reservation code' });
     } catch (error) {
         console.error('Create booking error:', error);
+        if (error.code === '23503') {
+            return res.status(400).json({ error: 'Invalid listing or user' });
+        }
         res.status(500).json({ error: 'Failed to create booking' });
     }
 });

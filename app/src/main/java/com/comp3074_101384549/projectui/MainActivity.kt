@@ -24,7 +24,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val token = authPreferences.authToken.first()
             if (token != null) {
-                startActivity(Intent(this@MainActivity, HomeActivity::class.java))
+                val role = authPreferences.role.first() ?: "user"
+                val dest = if (role == "admin") AdminActivity::class.java else HomeActivity::class.java
+                startActivity(Intent(this@MainActivity, dest))
                 finish()
                 return@launch
             }
