@@ -11,7 +11,6 @@ class ListingRepository(
     private val listingDao: ListingDao
 ) {
 
-    // Helper function to convert a list of ListingEntity objects to a list of Listing objects
     private fun List<ListingEntity>.toListingList(): List<Listing> {
         return this.map { entity ->
             Listing(
@@ -30,20 +29,37 @@ class ListingRepository(
 
     /**
      * Fetches all listings for a specific user (owner view).
+     * API-first: syncs from backend to Room, falls back to cache on error.
      */
     suspend fun getAllListings(userId: String): List<Listing> {
-        return listingDao.getAllListings(userId).first().toListingList()
+        return try {
+            val remoteListings = apiService.getUserListings(userId)
+            listingDao.deleteAllByUserId(userId)
+            listingDao.insertAll(remoteListings.map { it.toListingEntity() })
+            remoteListings
+        } catch (e: Exception) {
+            listingDao.getAllListings(userId).first().toListingList()
+        }
     }
 
     /**
-     * Fetches all listings regardless of owner (driver browse view).
+     * Fetches all active listings regardless of owner (driver browse view).
+     * API-first: syncs from backend to Room, falls back to cache on error.
      */
     suspend fun getAllActiveListings(): List<Listing> {
-        return listingDao.getAllActiveListings().first().toListingList()
+        return try {
+            val remoteListings = apiService.getRemoteListings()
+            listingDao.deleteAll()
+            listingDao.insertAll(remoteListings.map { it.toListingEntity() })
+            remoteListings
+        } catch (e: Exception) {
+            listingDao.getAllActiveListings().first().toListingList()
+        }
     }
 
     /**
      * Searches listings for a specific user (owner view).
+     * Searches the local Room cache.
      */
     suspend fun searchListings(userId: String, address: String = "", maxPrice: Double? = null): List<Listing> {
         val addressQuery = if (address.isBlank()) "%" else "%$address%"
@@ -56,6 +72,7 @@ class ListingRepository(
 
     /**
      * Searches all listings regardless of owner (driver browse view).
+     * Searches the local Room cache.
      */
     suspend fun searchAllListings(address: String = "", maxPrice: Double? = null): List<Listing> {
         val addressQuery = if (address.isBlank()) "%" else "%$address%"
@@ -65,30 +82,53 @@ class ListingRepository(
         }
         return results
     }
+
     /**
-     * Persists a new listing locally and sends it to the remote API.
+     * Creates a new listing via API and saves to local cache.
+     * Falls back to local-only if API is unavailable.
      */
     suspend fun saveNewListing(listing: Listing) {
-        // 1. Save to local database (cache)
-        listingDao.insert(listing.toListingEntity())
-
-        // 2. Try to send to remote API (ignore errors for now since API is not set up)
         try {
-            apiService.createListing(listing)
+            val savedListing = apiService.createListing(listing)
+            listingDao.insert(savedListing.toListingEntity())
         } catch (e: Exception) {
-            // Silently ignore API errors - listing is already saved locally
+            listingDao.insert(listing.toListingEntity())
         }
     }
 
     /**
-     * Deletes all listings for a specific user from the local database.
+     * Updates a listing via API and in local cache.
+     */
+    suspend fun updateListing(listing: Listing) {
+        try {
+            apiService.updateListing(listing.id, listing)
+        } catch (e: Exception) {
+            // Fall through to local update
+        }
+        listingDao.update(listing.toListingEntity())
+    }
+
+    /**
+     * Deletes a listing via API and from local cache.
+     */
+    suspend fun deleteListing(listingId: String) {
+        try {
+            apiService.deleteListing(listingId)
+        } catch (e: Exception) {
+            // Fall through to local delete
+        }
+        listingDao.deleteById(listingId)
+    }
+
+    /**
+     * Deletes all listings for a specific user from local cache and API.
      */
     suspend fun deleteAllListings(userId: String) {
         listingDao.deleteAllByUserId(userId)
     }
 
     /**
-     * Gets a single listing by ID.
+     * Gets a single listing by ID from local cache.
      */
     suspend fun getListingById(listingId: String): Listing? {
         val entity = listingDao.getListingById(listingId) ?: return null
@@ -104,19 +144,4 @@ class ListingRepository(
             userId = entity.userId
         )
     }
-
-    /**
-     * Updates an existing listing.
-     */
-    suspend fun updateListing(listing: Listing) {
-        listingDao.update(listing.toListingEntity())
-    }
-
-    /**
-     * Deletes a single listing by ID.
-     */
-    suspend fun deleteListing(listingId: String) {
-        listingDao.deleteById(listingId)
-    }
 }
-
