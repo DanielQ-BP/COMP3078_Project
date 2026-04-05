@@ -3,7 +3,6 @@ package com.comp3074_101384549.projectui.ui.adapter
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
