@@ -11,7 +11,19 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         app:title="Admin"
-        app:titleTextColor="@android:color/white" />
+        app:titleTextColor="@android:color/white">
+
+        <Button
+            android:id="@+id/buttonAdminLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="8dp"
+            android:text="Logout"
+            android:textColor="@android:color/white"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <FrameLayout
         android:id="@+id/adminFragmentContainer"

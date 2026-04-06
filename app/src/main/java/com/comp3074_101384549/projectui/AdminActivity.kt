@@ -34,13 +34,8 @@ class AdminActivity : AppCompatActivity() {
         binding = ActivityAdminBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.adminToolbar)
-        binding.adminToolbar.inflateMenu(R.menu.admin_toolbar_menu)
-        binding.adminToolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.admin_menu_logout) {
-                showLogoutConfirmation()
-                true
-            } else false
+        binding.buttonAdminLogout.setOnClickListener {
+            showLogoutConfirmation()
         }
 
         binding.adminBottomNav.setOnItemSelectedListener { item ->
