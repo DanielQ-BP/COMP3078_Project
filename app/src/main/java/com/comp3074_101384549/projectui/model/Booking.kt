@@ -10,7 +10,9 @@ data class Booking(
     val status: String,
     val referenceCode: String = "",
     val address: String = "",
-    val pricePerHour: Double = 0.0
+    val pricePerHour: Double = 0.0,
+    val fineAmount: Double = 0.0,
+    val finePaid: Boolean = false
 ) {
     fun toBookingEntity(): BookingEntity {
         val date = if (startTime.length >= 10) startTime.take(10) else startTime
@@ -26,6 +28,8 @@ data class Booking(
             totalPrice = totalPrice,
             status = status,
             referenceCode = referenceCode,
+            fineAmount = fineAmount,
+            finePaid = finePaid,
             createdAt = System.currentTimeMillis()
         )
     }

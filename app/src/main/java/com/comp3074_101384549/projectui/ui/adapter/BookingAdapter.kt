@@ -13,17 +13,20 @@ import com.comp3074_101384549.projectui.model.BookingEntity
 
 class BookingAdapter(
     private var bookings: List<BookingEntity>,
-    private val onCancelClick: (BookingEntity) -> Unit
+    private val onCancelClick: (BookingEntity) -> Unit,
+    private val onPayFineClick: (BookingEntity) -> Unit = {}
 ) : RecyclerView.Adapter<BookingAdapter.BookingViewHolder>() {
 
     class BookingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val status: TextView = itemView.findViewById(R.id.textStatus)
-        val address: TextView = itemView.findViewById(R.id.textAddress)
+        val status: TextView          = itemView.findViewById(R.id.textStatus)
+        val address: TextView         = itemView.findViewById(R.id.textAddress)
         val reservationCode: TextView = itemView.findViewById(R.id.textReservationCode)
-        val date: TextView = itemView.findViewById(R.id.textDate)
-        val time: TextView = itemView.findViewById(R.id.textTime)
-        val total: TextView = itemView.findViewById(R.id.textTotal)
-        val cancelButton: Button = itemView.findViewById(R.id.buttonCancel)
+        val date: TextView            = itemView.findViewById(R.id.textDate)
+        val time: TextView            = itemView.findViewById(R.id.textTime)
+        val total: TextView           = itemView.findViewById(R.id.textTotal)
+        val fineAmount: TextView      = itemView.findViewById(R.id.textFineAmount)
+        val payFineButton: Button     = itemView.findViewById(R.id.buttonPayFine)
+        val cancelButton: Button      = itemView.findViewById(R.id.buttonCancel)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookingViewHolder {
@@ -46,34 +49,55 @@ class BookingAdapter(
         holder.time.text = "${booking.startTime} - ${booking.endTime}"
         holder.total.text = "$${String.format("%.2f", booking.totalPrice)}"
 
-        // Set status with appropriate color
         holder.status.text = booking.status.replaceFirstChar { it.uppercase() }
         when (booking.status) {
             "confirmed" -> {
-                holder.status.setBackgroundColor(Color.parseColor("#1A5A2B")) // Green
+                holder.status.setBackgroundColor(Color.parseColor("#1A5A2B"))
                 holder.cancelButton.visibility = View.VISIBLE
+                holder.fineAmount.visibility = View.GONE
+                holder.payFineButton.visibility = View.GONE
             }
             "completed" -> {
-                holder.status.setBackgroundColor(Color.parseColor("#757575")) // Gray
+                holder.status.setBackgroundColor(Color.parseColor("#757575"))
                 holder.cancelButton.visibility = View.GONE
+                holder.fineAmount.visibility = View.GONE
+                holder.payFineButton.visibility = View.GONE
             }
             "cancelled" -> {
-                holder.status.setBackgroundColor(Color.parseColor("#D32F2F")) // Red
+                holder.status.setBackgroundColor(Color.parseColor("#D32F2F"))
                 holder.cancelButton.visibility = View.GONE
+                holder.fineAmount.visibility = View.GONE
+                holder.payFineButton.visibility = View.GONE
             }
             "overstay" -> {
-                holder.status.setBackgroundColor(Color.parseColor("#E65100")) // Orange
-                holder.cancelButton.visibility = View.VISIBLE
+                holder.status.setBackgroundColor(Color.parseColor("#E65100"))
+                if (booking.fineAmount > 0) {
+                    holder.fineAmount.visibility = View.VISIBLE
+                    if (booking.finePaid) {
+                        holder.fineAmount.text = "Fine paid: $${String.format("%.2f", booking.fineAmount)}"
+                        holder.payFineButton.visibility = View.GONE
+                        holder.cancelButton.visibility = View.GONE
+                    } else {
+                        holder.fineAmount.text = "⚠ Overstay fine: $${String.format("%.2f", booking.fineAmount)}"
+                        holder.payFineButton.visibility = View.VISIBLE
+                        holder.cancelButton.visibility = View.VISIBLE
+                    }
+                } else {
+                    holder.fineAmount.visibility = View.GONE
+                    holder.payFineButton.visibility = View.GONE
+                    holder.cancelButton.visibility = View.VISIBLE
+                }
             }
             else -> {
                 holder.status.setBackgroundColor(Color.parseColor("#1A5A2B"))
                 holder.cancelButton.visibility = View.VISIBLE
+                holder.fineAmount.visibility = View.GONE
+                holder.payFineButton.visibility = View.GONE
             }
         }
 
-        holder.cancelButton.setOnClickListener {
-            onCancelClick(booking)
-        }
+        holder.cancelButton.setOnClickListener { onCancelClick(booking) }
+        holder.payFineButton.setOnClickListener { onPayFineClick(booking) }
     }
 
     override fun getItemCount(): Int = bookings.size

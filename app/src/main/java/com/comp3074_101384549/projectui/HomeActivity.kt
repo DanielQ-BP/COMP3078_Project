@@ -24,6 +24,7 @@ import com.comp3074_101384549.projectui.ui.listings.BecomeOwnerFragment
 import com.comp3074_101384549.projectui.ui.notifications.NotificationsFragment
 import com.comp3074_101384549.projectui.ui.listings.CreateListingFragment
 import com.comp3074_101384549.projectui.ui.listings.MyListingsFragment
+import com.comp3074_101384549.projectui.ui.listings.OwnerEarningsFragment
 import com.comp3074_101384549.projectui.ui.profile.ProfileFragment
 import com.comp3074_101384549.projectui.ui.reservations.ReservedListingsFragment
 import com.comp3074_101384549.projectui.ui.settings.SettingsFragment
@@ -136,6 +137,7 @@ class HomeActivity : AppCompatActivity() {
             menu.findItem(R.id.nav_admin_dashboard)?.isVisible = isAdmin
             menu.findItem(R.id.nav_listings_created)?.isVisible = inOwnerMode && !isAdmin
             menu.findItem(R.id.nav_my_listings)?.isVisible = inOwnerMode && !isAdmin
+            menu.findItem(R.id.nav_earnings)?.isVisible = inOwnerMode && !isAdmin
             menu.findItem(R.id.nav_become_owner)?.isVisible = !isAdmin
 
             if (!isAdmin) {
@@ -247,6 +249,12 @@ class HomeActivity : AppCompatActivity() {
 
                 R.id.nav_my_listings -> {
                     openFragment(MyListingsFragment())
+                    binding.drawerLayout.closeDrawers()
+                    true
+                }
+
+                R.id.nav_earnings -> {
+                    openFragment(OwnerEarningsFragment())
                     binding.drawerLayout.closeDrawers()
                     true
                 }

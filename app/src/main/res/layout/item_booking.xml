@@ -111,15 +111,43 @@
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/buttonCancel"
-            android:layout_width="wrap_content"
+        <!-- Overstay fine info -->
+        <TextView
+            android:id="@+id/textFineAmount"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cancel Booking"
             android:textSize="14sp"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:textColor="#D32F2F"
-            android:layout_gravity="end" />
+            android:textStyle="bold"
+            android:textColor="#E65100"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/buttonPayFine"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pay Fine"
+                android:textSize="14sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="#E65100"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/buttonCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel Booking"
+                android:textSize="14sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="#D32F2F" />
+
+        </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

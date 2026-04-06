@@ -15,6 +15,10 @@
         android:title="My Listings"
         android:visible="false" />
     <item
+        android:id="@+id/nav_earnings"
+        android:title="My Earnings"
+        android:visible="false" />
+    <item
         android:id="@+id/nav_listings_reserved"
         android:title="My Reservations" />
     <item

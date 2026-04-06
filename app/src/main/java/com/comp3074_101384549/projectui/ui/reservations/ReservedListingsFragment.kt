@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.comp3074_101384549.projectui.BuildConfig
+import com.comp3074_101384549.projectui.HomeActivity
 import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AppDatabase
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
@@ -21,6 +22,7 @@ import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
 import com.comp3074_101384549.projectui.model.BookingEntity
 import com.comp3074_101384549.projectui.repository.BookingRepository
 import com.comp3074_101384549.projectui.ui.adapter.BookingAdapter
+import com.comp3074_101384549.projectui.ui.payment.PayFineFragment
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -72,7 +74,8 @@ class ReservedListingsFragment : Fragment() {
 
         bookingAdapter = BookingAdapter(
             bookings = emptyList(),
-            onCancelClick = { booking -> showCancelConfirmation(booking) }
+            onCancelClick = { booking -> showCancelConfirmation(booking) },
+            onPayFineClick = { booking -> openPayFine(booking) }
         )
         recyclerView?.adapter = bookingAdapter
 
@@ -117,6 +120,12 @@ class ReservedListingsFragment : Fragment() {
     private fun showEmptyState(show: Boolean) {
         emptyState?.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView?.visibility = if (show) View.GONE else View.VISIBLE
+    }
+
+    private fun openPayFine(booking: BookingEntity) {
+        (activity as? HomeActivity)?.openFragment(
+            PayFineFragment.newInstance(booking.id, booking.fineAmount, booking.address)
+        )
     }
 
     private fun showCancelConfirmation(booking: BookingEntity) {

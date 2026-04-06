@@ -21,8 +21,10 @@ import com.comp3074_101384549.projectui.model.Ticket
 import com.comp3074_101384549.projectui.model.TicketResponse
 import com.comp3074_101384549.projectui.model.TicketRespondRequest
 import com.comp3074_101384549.projectui.model.UpdateTicketStatusRequest
+import com.comp3074_101384549.projectui.model.EarningsListing
 import com.comp3074_101384549.projectui.model.FcmTokenRequest
 import com.comp3074_101384549.projectui.model.Notification
+import com.comp3074_101384549.projectui.model.OwnerEarningsResponse
 import com.comp3074_101384549.projectui.model.UpdateBookingStatusRequest
 import com.comp3074_101384549.projectui.model.UpdateUserRequest
 import com.comp3074_101384549.projectui.model.User
@@ -78,6 +80,12 @@ interface ApiService {
 
     @GET("bookings/user/{userId}")
     suspend fun getUserBookings(@Path("userId") userId: String): List<Booking>
+
+    @GET("bookings/owner-earnings/{userId}")
+    suspend fun getOwnerEarnings(@Path("userId") userId: String): OwnerEarningsResponse
+
+    @PUT("bookings/{id}/pay-fine")
+    suspend fun payFine(@Path("id") bookingId: String): MessageResponse
 
     @POST("bookings/create")
     suspend fun createBooking(@Body request: CreateBookingRequest): CreateBookingResponse

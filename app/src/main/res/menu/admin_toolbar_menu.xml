@@ -3,5 +3,5 @@
     <item
         android:id="@+id/admin_menu_logout"
         android:title="Logout"
-        android:showAsAction="never" />
+        android:showAsAction="always" />
 </menu>

@@ -19,7 +19,9 @@ data class BookingEntity(
     @ColumnInfo(name = "start_time") val startTime: String,
     @ColumnInfo(name = "end_time") val endTime: String,
     @ColumnInfo(name = "total_price") val totalPrice: Double,
-    @ColumnInfo(name = "status") val status: String = "confirmed", // confirmed, completed, cancelled
+    @ColumnInfo(name = "status") val status: String = "confirmed",
     @ColumnInfo(name = "reference_code") val referenceCode: String = "",
+    @ColumnInfo(name = "fine_amount") val fineAmount: Double = 0.0,
+    @ColumnInfo(name = "fine_paid") val finePaid: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis()
 )

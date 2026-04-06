@@ -64,6 +64,15 @@ async function migrate() {
         `);
         console.log('✓ Migration 004 — fcm_token column');
 
+        // Migration 005 — overstay fines
+        await client.query(`
+            ALTER TABLE bookings ADD COLUMN IF NOT EXISTS fine_amount DECIMAL(10,2) DEFAULT 0;
+        `);
+        await client.query(`
+            ALTER TABLE bookings ADD COLUMN IF NOT EXISTS fine_paid BOOLEAN DEFAULT FALSE;
+        `);
+        console.log('✓ Migration 005 — fine_amount + fine_paid columns');
+
         console.log('\nAll migrations applied successfully.');
     } catch (err) {
         console.error('Migration failed:', err.message);
