@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     kotlin("kapt")
+    id("com.google.gms.google-services")
 }
 
 // Load local.properties
@@ -100,5 +101,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     // Stripe
     implementation("com.stripe:stripe-android:20.+")
+    // Firebase Cloud Messaging
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
 }

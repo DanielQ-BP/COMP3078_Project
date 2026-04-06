@@ -2,20 +2,9 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { notify } = require('../notify');
 
 const router = express.Router();
-
-// Helper: insert a notification
-async function notify(userId, title, message) {
-    try {
-        await pool.query(
-            `INSERT INTO notifications (user_id, title, message) VALUES ($1, $2, $3)`,
-            [userId, title, message]
-        );
-    } catch (err) {
-        console.error('Failed to create notification:', err.message);
-    }
-}
 
 function generateReferenceCode() {
     return `PS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -109,9 +98,9 @@ router.post('/create', authenticateToken, async (req, res) => {
         // Check for conflicting bookings on the same listing
         const conflict = await pool.query(`
             SELECT COUNT(*) FROM bookings
-            WHERE listing_id = $1
+            WHERE listing_id = $1::uuid
               AND status IN ('confirmed', 'pending', 'overstay')
-              AND NOT (end_time <= $2 OR start_time >= $3)
+              AND NOT (end_time <= $2::timestamptz OR start_time >= $3::timestamptz)
         `, [listingId, startTime, endTime]);
 
         if (parseInt(conflict.rows[0].count) > 0) {
@@ -124,7 +113,7 @@ router.post('/create', authenticateToken, async (req, res) => {
             try {
                 const result = await pool.query(`
                     INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status, reference_code)
-                    VALUES ($1, $2, $3, $4, $5, 'confirmed', $6)
+                    VALUES ($1::uuid, $2::uuid, $3::timestamptz, $4::timestamptz, $5, 'confirmed', $6)
                     RETURNING id, listing_id as "listingId", user_id as "userId",
                               start_time as "startTime", end_time as "endTime",
                               total_price as "totalPrice", status, reference_code as "referenceCode"
@@ -154,11 +143,17 @@ router.post('/create', authenticateToken, async (req, res) => {
         console.error('Create booking error (reference collision):', lastError);
         res.status(500).json({ error: 'Failed to assign reservation code' });
     } catch (error) {
-        console.error('Create booking error:', error);
+        console.error('Create booking error | code:', error.code, '| message:', error.message, '| detail:', error.detail);
         if (error.code === '23503') {
-            return res.status(400).json({ error: 'Invalid listing or user' });
+            return res.status(400).json({ error: 'Invalid listing or user ID' });
         }
-        res.status(500).json({ error: 'Failed to create booking' });
+        if (error.code === '22P02') {
+            return res.status(400).json({ error: 'Invalid UUID or timestamp format', detail: error.message });
+        }
+        if (error.code === '22007' || error.code === '22008') {
+            return res.status(400).json({ error: 'Invalid date/time value', detail: error.message });
+        }
+        res.status(500).json({ error: 'Failed to create booking', detail: error.message });
     }
 });
 

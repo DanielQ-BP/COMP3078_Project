@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -68,6 +69,10 @@ class NotificationsFragment : Fragment() {
         )
         recyclerView?.adapter = notificationAdapter
 
+        view.findViewById<Button>(R.id.buttonMarkAllRead).setOnClickListener {
+            markAllRead()
+        }
+
         loadNotifications()
     }
 
@@ -88,6 +93,17 @@ class NotificationsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 if (isAdded) showEmptyState(true)
+            }
+        }
+    }
+
+    private fun markAllRead() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                apiService.markAllNotificationsRead()
+                loadNotifications()
+            } catch (e: Exception) {
+                // silently ignore
             }
         }
     }

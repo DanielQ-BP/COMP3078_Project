@@ -13,12 +13,15 @@ import com.comp3074_101384549.projectui.model.CreateBookingResponse
 import com.comp3074_101384549.projectui.model.CreateTicketRequest
 import com.comp3074_101384549.projectui.model.Listing
 import com.comp3074_101384549.projectui.model.MessageResponse
+import com.comp3074_101384549.projectui.model.CreatePaymentRequest
+import com.comp3074_101384549.projectui.model.CreatePaymentResponse
 import com.comp3074_101384549.projectui.model.PaymentIntentRequest
 import com.comp3074_101384549.projectui.model.PaymentIntentResponse
 import com.comp3074_101384549.projectui.model.Ticket
 import com.comp3074_101384549.projectui.model.TicketResponse
 import com.comp3074_101384549.projectui.model.TicketRespondRequest
 import com.comp3074_101384549.projectui.model.UpdateTicketStatusRequest
+import com.comp3074_101384549.projectui.model.FcmTokenRequest
 import com.comp3074_101384549.projectui.model.Notification
 import com.comp3074_101384549.projectui.model.UpdateBookingStatusRequest
 import com.comp3074_101384549.projectui.model.UpdateUserRequest
@@ -49,6 +52,15 @@ interface ApiService {
 
     @GET("listings/all")
     suspend fun getRemoteListings(): List<Listing>
+
+    @GET("listings/search")
+    suspend fun searchListings(
+        @Query("address") address: String? = null,
+        @Query("minPrice") minPrice: Double? = null,
+        @Query("maxPrice") maxPrice: Double? = null,
+        @Query("date") date: String? = null,
+        @Query("sortBy") sortBy: String? = null
+    ): List<Listing>
 
     @GET("listings/user/{userId}")
     suspend fun getUserListings(@Path("userId") userId: String): List<Listing>
@@ -90,6 +102,12 @@ interface ApiService {
         @Body request: UpdateUserRequest
     ): UserProfile
 
+    @PUT("users/{id}/fcm-token")
+    suspend fun registerFcmToken(
+        @Path("id") userId: String,
+        @Body request: FcmTokenRequest
+    ): MessageResponse
+
     // ── Notifications ───────────────────────────────────────────────────────
 
     @GET("notifications/user/{userId}")
@@ -100,6 +118,9 @@ interface ApiService {
 
     @DELETE("notifications/{id}")
     suspend fun deleteNotification(@Path("id") id: String): MessageResponse
+
+    @PUT("notifications/read-all")
+    suspend fun markAllNotificationsRead(): MessageResponse
 
     // ── Admin ────────────────────────────────────────────────────────────────
 
@@ -128,6 +149,9 @@ interface ApiService {
 
     @POST("payments/create-payment-intent")
     suspend fun createPaymentIntent(@Body request: PaymentIntentRequest): PaymentIntentResponse
+
+    @POST("payments/create")
+    suspend fun createPayment(@Body request: CreatePaymentRequest): CreatePaymentResponse
 
     // ── Tickets ─────────────────────────────────────────────────────────────
 

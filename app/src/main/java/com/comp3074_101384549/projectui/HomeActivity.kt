@@ -1,21 +1,29 @@
 package com.comp3074_101384549.projectui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
+import com.comp3074_101384549.projectui.data.remote.ApiClient
 import com.comp3074_101384549.projectui.databinding.ActivityHomeBinding
+import com.comp3074_101384549.projectui.model.FcmTokenRequest
+import com.google.firebase.messaging.FirebaseMessaging
 import com.comp3074_101384549.projectui.ui.home.HomeFragment
 import com.comp3074_101384549.projectui.ui.listings.BecomeOwnerFragment
+import com.comp3074_101384549.projectui.ui.notifications.NotificationsFragment
 import com.comp3074_101384549.projectui.ui.listings.CreateListingFragment
 import com.comp3074_101384549.projectui.ui.listings.MyListingsFragment
-import com.comp3074_101384549.projectui.ui.payment.PaymentFragment
 import com.comp3074_101384549.projectui.ui.profile.ProfileFragment
 import com.comp3074_101384549.projectui.ui.reservations.ReservedListingsFragment
 import com.comp3074_101384549.projectui.ui.settings.SettingsFragment
@@ -43,6 +51,8 @@ class HomeActivity : AppCompatActivity() {
         setupBottomNav()
         setupDrawerMenu()
         applyRoleToDrawer()
+        requestNotificationPermission()
+        registerFcmToken()
 
         if (savedInstanceState == null) {
             openFragment(HomeFragment())
@@ -53,6 +63,50 @@ class HomeActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         applyRoleToDrawer()
+        refreshNotificationBadge()
+    }
+
+    private fun refreshNotificationBadge() {
+        lifecycleScope.launch {
+            try {
+                val userId = authPreferences.userId.first() ?: return@launch
+                val notifications = ApiClient.api(applicationContext).getUserNotifications(userId)
+                val unreadCount = notifications.count { !it.isRead }
+                val badge = binding.bottomNav.getOrCreateBadge(R.id.notificationsFragment)
+                if (unreadCount > 0) {
+                    badge.isVisible = true
+                    badge.number = unreadCount
+                } else {
+                    binding.bottomNav.removeBadge(R.id.notificationsFragment)
+                }
+            } catch (_: Exception) {
+                // no-op: badge stays as-is if network unavailable
+            }
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    100
+                )
+            }
+        }
+    }
+
+    private fun registerFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            lifecycleScope.launch {
+                try {
+                    val userId = authPreferences.userId.first() ?: return@launch
+                    ApiClient.api(applicationContext).registerFcmToken(userId, FcmTokenRequest(token))
+                } catch (_: Exception) { }
+            }
+        }
     }
 
     private fun applySavedTheme() {
@@ -118,6 +172,11 @@ class HomeActivity : AppCompatActivity() {
                     }
                     true
                 }
+                R.id.notificationsFragment -> {
+                    openFragment(NotificationsFragment())
+                    binding.bottomNav.removeBadge(R.id.notificationsFragment)
+                    true
+                }
                 R.id.drawerMenu -> {
                     binding.drawerLayout.openDrawer(GravityCompat.END)
                     true
@@ -134,6 +193,13 @@ class HomeActivity : AppCompatActivity() {
                 R.id.nav_profile -> {
                     openFragment(ProfileFragment())
                     binding.drawerLayout.closeDrawers()
+                    true
+                }
+
+                R.id.nav_notifications -> {
+                    openFragment(NotificationsFragment())
+                    binding.drawerLayout.closeDrawers()
+                    binding.bottomNav.removeBadge(R.id.notificationsFragment)
                     true
                 }
 
@@ -181,12 +247,6 @@ class HomeActivity : AppCompatActivity() {
 
                 R.id.nav_my_listings -> {
                     openFragment(MyListingsFragment())
-                    binding.drawerLayout.closeDrawers()
-                    true
-                }
-
-                R.id.nav_payment_methods -> {
-                    openFragment(PaymentFragment())
                     binding.drawerLayout.closeDrawers()
                     true
                 }

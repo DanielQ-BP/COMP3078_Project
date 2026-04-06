@@ -267,29 +267,36 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                     referenceCode = response.referenceCode,
                 )
 
-                bookingRepository.createBooking(booking)
+                bookingRepository.saveBookingLocally(booking)
 
                 if (isAdded) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Booking confirmed! Reservation code: ${response.referenceCode}\n(Keep this code to report a dispute in Support.)",
-                        Toast.LENGTH_LONG,
-                    ).show()
-
+                    val paymentFragment = com.comp3074_101384549.projectui.ui.payment.PaymentFragment.newInstance(
+                        totalPrice = totalPrice,
+                        bookingId = response.id,
+                        address = address,
+                        referenceCode = response.referenceCode,
+                        bookingDate = date,
+                        startTime = startTime,
+                        endTime = endTime
+                    )
                     parentFragmentManager.beginTransaction()
-                        .replace(R.id.homeFragmentContainer, com.comp3074_101384549.projectui.ui.home.HomeFragment())
+                        .replace(R.id.homeFragmentContainer, paymentFragment)
+                        .addToBackStack(null)
                         .commit()
-
-                    (activity as? com.comp3074_101384549.projectui.HomeActivity)?.let { homeActivity ->
-                        homeActivity.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)?.selectedItemId = R.id.homeFragment
-                    }
                 }
             } catch (e: HttpException) {
                 if (isAdded) {
-                    val msg = if (e.code() == 409)
+                    val msg = if (e.code() == 409) {
                         "This spot is already booked for the selected time. Please choose a different time."
-                    else
-                        "Booking failed: ${e.message()}"
+                    } else {
+                        try {
+                            val body = e.response()?.errorBody()?.string()
+                            val json = org.json.JSONObject(body ?: "{}")
+                            "Booking failed: ${json.optString("error", e.message())}"
+                        } catch (_: Exception) {
+                            "Booking failed: ${e.message()}"
+                        }
+                    }
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {

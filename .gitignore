@@ -92,6 +92,9 @@ obj/
 # Comment out if you want to include these
 # google-services.json
 
+# Firebase service account key — contains private key, never commit
+firebase-service-account.json
+
 # Freeline
 freeline.py
 freeline/

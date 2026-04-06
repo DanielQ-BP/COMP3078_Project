@@ -8,6 +8,7 @@ data class Booking(
     val endTime: String,
     val totalPrice: Double,
     val status: String,
+    val referenceCode: String = "",
     val address: String = "",
     val pricePerHour: Double = 0.0
 ) {
@@ -24,6 +25,7 @@ data class Booking(
             endTime = endTime,
             totalPrice = totalPrice,
             status = status,
+            referenceCode = referenceCode,
             createdAt = System.currentTimeMillis()
         )
     }

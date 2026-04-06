@@ -2,6 +2,7 @@ package com.comp3074_101384549.projectui.ui.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -44,13 +46,12 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.Calendar
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var listingRepository: ListingRepository
     private lateinit var authPreferences: AuthPreferences
-
-    // If not using DI, you would need to instantiate or provide it here.
 
     private var googleMap: GoogleMap? = null
     private var _binding: FragmentHomeBinding? = null
@@ -59,6 +60,9 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private var cachedListings: List<Listing> = emptyList()
     private val markerListingMap: MutableMap<Marker, Listing> = mutableMapOf()
     private var parkingIcon: BitmapDescriptor? = null
+
+    private var selectedDate: String? = null
+    private var sortAscending = true
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1002
@@ -83,8 +87,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val apiService = retrofit.create(ApiService::class.java)
         listingRepository = ListingRepository(apiService, listingDao)
     }
-
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -101,7 +103,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         mapFragment?.getMapAsync(this)
 
         listingAdapter = ListingAdapter(emptyList()) { listing ->
-            // When a listing is clicked, navigate to details fragment
             val detailsFragment = ListingDetailsFragment().apply {
                 arguments = bundleOf(
                     "listingId" to listing.id,
@@ -121,14 +122,47 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         recyclerView.adapter = listingAdapter
 
         val addressInput = view.findViewById<EditText>(R.id.editTextAddress)
+        val minPriceInput = view.findViewById<EditText>(R.id.editTextMinPrice)
         val maxPriceInput = view.findViewById<EditText>(R.id.editTextMaxPrice)
+        val dateInput = view.findViewById<EditText>(R.id.editTextDateTime)
         val searchButton = view.findViewById<Button>(R.id.buttonSearch)
+        val sortButton = view.findViewById<Button>(R.id.buttonSortPrice)
+        val resultsHeader = view.findViewById<TextView>(R.id.textResultsHeader)
+
+        dateInput.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(
+                requireContext(),
+                { _, year, month, day ->
+                    selectedDate = String.format("%04d-%02d-%02d", year, month + 1, day)
+                    dateInput.setText(selectedDate)
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).apply {
+                datePicker.minDate = System.currentTimeMillis()
+            }.show()
+        }
+
+        sortButton.setOnClickListener {
+            sortAscending = !sortAscending
+            sortButton.text = if (sortAscending) "Sort: Price Low to High" else "Sort: Price High to Low"
+            val sorted = if (sortAscending) {
+                cachedListings.sortedBy { it.pricePerHour }
+            } else {
+                cachedListings.sortedByDescending { it.pricePerHour }
+            }
+            cachedListings = sorted
+            updateListings(sorted)
+        }
 
         searchButton.setOnClickListener {
             val address = addressInput.text.toString().trim()
+            val minPrice = minPriceInput.text.toString().toDoubleOrNull()
             val maxPrice = maxPriceInput.text.toString().toDoubleOrNull()
+            val sortBy = if (sortAscending) "price_asc" else "price_desc"
 
-            // Perform search
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     if (!isAdded) return@launch
@@ -141,16 +175,22 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                         return@launch
                     }
 
-                    val results = listingRepository.searchAllListings(address, maxPrice)
+                    val results = listingRepository.searchListingsRemote(
+                        address = address.ifBlank { null },
+                        minPrice = minPrice,
+                        maxPrice = maxPrice,
+                        date = selectedDate,
+                        sortBy = sortBy
+                    )
 
                     if (!isAdded) return@launch
 
                     cachedListings = results
                     if (results.isEmpty()) {
-                        Toast.makeText(requireContext(), "No parking spots found", Toast.LENGTH_SHORT).show()
+                        resultsHeader?.text = "No spots found"
                         updateListings(emptyList())
                     } else {
-                        Toast.makeText(requireContext(), "Found ${results.size} parking spot(s)", Toast.LENGTH_SHORT).show()
+                        resultsHeader?.text = "${results.size} spot(s) found"
                         updateListings(results)
                     }
                 } catch (e: Exception) {
@@ -199,7 +239,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 .commit()
         }
 
-        // If listings loaded before the map was ready, add their markers now
         if (cachedListings.isNotEmpty()) {
             updateMapMarkers(map, cachedListings)
         }
@@ -207,7 +246,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     override fun onResume() {
         super.onResume()
-        // Reload all listings when returning to this fragment
         loadAllListings()
     }
 
@@ -228,6 +266,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 val listings = listingRepository.getAllActiveListings()
                 cachedListings = listings
                 if (isAdded) {
+                    val resultsHeader = view?.findViewById<TextView>(R.id.textResultsHeader)
+                    resultsHeader?.text = "Available Parking Spots"
                     updateListings(listings)
                 }
             } catch (e: Exception) {
@@ -242,7 +282,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private fun updateListings(listings: List<Listing>) {
         if (!isAdded) return
 
-        // Show/hide empty state
         val emptyState = view?.findViewById<View>(R.id.emptyState)
         val recyclerView = view?.findViewById<View>(R.id.listViewListings)
         if (listings.isEmpty()) {
@@ -253,10 +292,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             recyclerView?.visibility = View.VISIBLE
         }
 
-        // Update RecyclerView
         listingAdapter.updateListings(listings)
 
-        // Update markers on the map if it's already ready
         googleMap?.let { map -> updateMapMarkers(map, listings) }
     }
 

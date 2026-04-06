@@ -44,6 +44,65 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /listings/search - Search listings with filters
+router.get('/search', authenticateToken, async (req, res) => {
+    try {
+        const { address, minPrice, maxPrice, date, sortBy } = req.query;
+
+        let conditions = ['l.is_active = true'];
+        const params = [];
+        let paramIndex = 1;
+
+        if (address) {
+            conditions.push(`l.address ILIKE $${paramIndex++}`);
+            params.push(`%${address}%`);
+        }
+
+        if (minPrice !== undefined && minPrice !== '') {
+            conditions.push(`l.price_per_hour >= $${paramIndex++}`);
+            params.push(parseFloat(minPrice));
+        }
+
+        if (maxPrice !== undefined && maxPrice !== '') {
+            conditions.push(`l.price_per_hour <= $${paramIndex++}`);
+            params.push(parseFloat(maxPrice));
+        }
+
+        let dateSubquery = '';
+        if (date) {
+            dateSubquery = `
+                AND l.id NOT IN (
+                    SELECT b.listing_id FROM bookings b
+                    WHERE b.status IN ('confirmed', 'pending', 'overstay')
+                    AND DATE(b.start_time) <= $${paramIndex}
+                    AND DATE(b.end_time) >= $${paramIndex}
+                )
+            `;
+            params.push(date);
+            paramIndex++;
+        }
+
+        const orderDir = sortBy === 'price_desc' ? 'DESC' : 'ASC';
+
+        const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+        const result = await pool.query(`
+            SELECT l.id, l.user_id as "userId", l.address, l.price_per_hour as "pricePerHour",
+                   l.availability, l.description, l.is_active as "isActive",
+                   l.latitude, l.longitude, l.created_at as "createdAt"
+            FROM listings l
+            ${whereClause}
+            ${dateSubquery}
+            ORDER BY l.price_per_hour ${orderDir}
+        `, params);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Search listings error:', error);
+        res.status(500).json({ error: 'Failed to search listings' });
+    }
+});
+
 // GET /listings/:id - Get single listing
 router.get('/:id', authenticateToken, async (req, res) => {
     try {

@@ -123,7 +123,7 @@ class ReservedListingsFragment : Fragment() {
         if (!isAdded) return
         AlertDialog.Builder(requireContext())
             .setTitle("Cancel Booking")
-            .setMessage("Are you sure you want to cancel this booking?\n\n${booking.address}\n${booking.bookingDate}")
+            .setMessage("Are you sure you want to cancel this booking?\n\n${booking.address}\n${booking.bookingDate}\n\nNote: If you paid online, a refund will be processed to your original payment method within 3-5 business days.")
             .setPositiveButton("Yes, Cancel") { _, _ ->
                 cancelBooking(booking)
             }

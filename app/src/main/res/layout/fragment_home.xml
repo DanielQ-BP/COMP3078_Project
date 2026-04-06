@@ -51,6 +51,25 @@
                         android:inputType="textPostalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:boxStrokeColor="@color/parkspot_green"
+                    app:startIconDrawable="@android:drawable/ic_menu_today"
+                    app:startIconTint="@color/parkspot_green">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextDateTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Available Date (optional)"
+                        android:focusable="false"
+                        android:inputType="none"
+                        android:clickable="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <LinearLayout
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
@@ -63,14 +82,15 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
-                        app:boxStrokeColor="@color/parkspot_green">
+                        app:boxStrokeColor="@color/parkspot_green"
+                        app:prefixText="$">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/editTextDateTime"
+                            android:id="@+id/editTextMinPrice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Date &amp; Time"
-                            android:inputType="datetime" />
+                            android:hint="Min Price"
+                            android:inputType="numberDecimal" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -89,6 +109,14 @@
                             android:inputType="numberDecimal" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
+
+                <Button
+                    android:id="@+id/buttonSortPrice"
+                    android:text="Sort: Price Low to High"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginBottom="8dp" />
 
                 <Button
                     android:id="@+id/buttonSearch"
