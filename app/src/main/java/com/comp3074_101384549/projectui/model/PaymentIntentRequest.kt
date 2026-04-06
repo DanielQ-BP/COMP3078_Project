@@ -8,3 +8,6 @@ data class PaymentIntentRequest(
 data class PaymentIntentResponse(
     val clientSecret: String
 )
+
+data class CreatePaymentRequest(val bookingId: String, val amount: Double, val paymentMethod: String)
+data class CreatePaymentResponse(val id: String, val bookingId: String, val userId: String, val amount: Double, val paymentMethod: String, val status: String, val createdAt: String)

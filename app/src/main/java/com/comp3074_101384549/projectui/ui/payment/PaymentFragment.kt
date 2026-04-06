@@ -16,7 +16,9 @@ import com.comp3074_101384549.projectui.R
 import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.data.remote.AuthInterceptor
+import com.comp3074_101384549.projectui.model.CreatePaymentRequest
 import com.comp3074_101384549.projectui.model.PaymentIntentRequest
+import com.comp3074_101384549.projectui.ui.reservations.BookingConfirmationFragment
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import kotlinx.coroutines.launch
@@ -27,9 +29,23 @@ import retrofit2.converter.gson.GsonConverterFactory
 class PaymentFragment : Fragment() {
 
     companion object {
-        fun newInstance(totalPrice: Double) = PaymentFragment().apply {
-            arguments = android.os.Bundle().apply {
+        fun newInstance(
+            totalPrice: Double,
+            bookingId: String,
+            address: String,
+            referenceCode: String,
+            bookingDate: String,
+            startTime: String,
+            endTime: String
+        ) = PaymentFragment().apply {
+            arguments = Bundle().apply {
                 putDouble("totalPrice", totalPrice)
+                putString("bookingId", bookingId)
+                putString("address", address)
+                putString("referenceCode", referenceCode)
+                putString("bookingDate", bookingDate)
+                putString("startTime", startTime)
+                putString("endTime", endTime)
             }
         }
     }
@@ -40,6 +56,12 @@ class PaymentFragment : Fragment() {
     private lateinit var payButton: Button
     private lateinit var progressBar: ProgressBar
     private var totalPrice: Double = 0.0
+    private var bookingId: String = ""
+    private var address: String = ""
+    private var referenceCode: String = ""
+    private var bookingDate: String = ""
+    private var startTime: String = ""
+    private var endTime: String = ""
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -66,6 +88,12 @@ class PaymentFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         totalPrice = arguments?.getDouble("totalPrice") ?: 0.0
+        bookingId = arguments?.getString("bookingId") ?: ""
+        address = arguments?.getString("address") ?: ""
+        referenceCode = arguments?.getString("referenceCode") ?: ""
+        bookingDate = arguments?.getString("bookingDate") ?: ""
+        startTime = arguments?.getString("startTime") ?: ""
+        endTime = arguments?.getString("endTime") ?: ""
 
         payButton = view.findViewById(R.id.payButton)
         progressBar = view.findViewById(R.id.progressBar)
@@ -85,7 +113,7 @@ class PaymentFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val amountCents = (totalPrice * 100).toInt().coerceAtLeast(50) // Stripe min is 50 cents
+                val amountCents = (totalPrice * 100).toInt().coerceAtLeast(50)
                 val response = apiService.createPaymentIntent(
                     PaymentIntentRequest(amount = amountCents, currency = "usd")
                 )
@@ -93,11 +121,12 @@ class PaymentFragment : Fragment() {
                 paymentSheet.presentWithPaymentIntent(response.clientSecret, config)
             } catch (e: Exception) {
                 if (isAdded) {
+                    payButton.isEnabled = true
+                    progressBar.visibility = View.GONE
                     Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             } finally {
                 if (isAdded) {
-                    payButton.isEnabled = true
                     progressBar.visibility = View.GONE
                 }
             }
@@ -107,12 +136,44 @@ class PaymentFragment : Fragment() {
     private fun onPaymentSheetResult(result: PaymentSheetResult) {
         if (!isAdded) return
         when (result) {
-            is PaymentSheetResult.Completed ->
-                Toast.makeText(requireContext(), "Payment successful!", Toast.LENGTH_LONG).show()
-            is PaymentSheetResult.Canceled ->
+            is PaymentSheetResult.Completed -> {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        apiService.createPayment(
+                            CreatePaymentRequest(
+                                bookingId = bookingId,
+                                amount = totalPrice,
+                                paymentMethod = "card"
+                            )
+                        )
+                    } catch (e: Exception) {
+                        // Payment already succeeded on Stripe side; log but continue
+                    }
+
+                    if (isAdded) {
+                        val confirmationFragment = BookingConfirmationFragment.newInstance(
+                            referenceCode = referenceCode,
+                            address = address,
+                            bookingDate = bookingDate,
+                            startTime = startTime,
+                            endTime = endTime,
+                            totalPrice = totalPrice
+                        )
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.homeFragmentContainer, confirmationFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                }
+            }
+            is PaymentSheetResult.Canceled -> {
+                payButton.isEnabled = true
                 Toast.makeText(requireContext(), "Payment cancelled.", Toast.LENGTH_SHORT).show()
-            is PaymentSheetResult.Failed ->
+            }
+            is PaymentSheetResult.Failed -> {
+                payButton.isEnabled = true
                 Toast.makeText(requireContext(), "Failed: ${result.error.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 }

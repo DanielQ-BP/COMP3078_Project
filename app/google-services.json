@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "89190319875",
+    "project_id": "parkspot-team16",
+    "storage_bucket": "parkspot-team16.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89190319875:android:ef4dd373712867b649cb36",
+        "android_client_info": {
+          "package_name": "com.comp3074_101384549.projectui"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDHqGRg1YcD3SiSNfW_P8IVM-bwCQsH_o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,20 +2,9 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { notify } = require('../notify');
 
 const router = express.Router();
-
-// Helper: insert a notification
-async function notify(userId, title, message) {
-    try {
-        await pool.query(
-            `INSERT INTO notifications (user_id, title, message) VALUES ($1, $2, $3)`,
-            [userId, title, message]
-        );
-    } catch (err) {
-        console.error('Failed to create notification:', err.message);
-    }
-}
 
 function generateReferenceCode() {
     return `PS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -27,26 +16,38 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         const { userId } = req.params;
 
         // Grace period check: mark confirmed bookings past end_time + 15 min as overstay
+        // Calculates fine = max($5, overstay_hours * price_per_hour * 1.5)
         const overstayed = await pool.query(`
-            UPDATE bookings
-            SET status = 'overstay', updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = $1
-              AND status = 'confirmed'
-              AND end_time + INTERVAL '15 minutes' < NOW()
-            RETURNING id, listing_id
+            UPDATE bookings AS b
+            SET status = 'overstay',
+                fine_amount = GREATEST(5.0,
+                    ROUND(EXTRACT(EPOCH FROM (NOW() - b.end_time - INTERVAL '15 minutes'))
+                          / 3600.0 * l.price_per_hour * 1.5, 2)),
+                updated_at = CURRENT_TIMESTAMP
+            FROM listings AS l
+            WHERE b.listing_id = l.id
+              AND b.user_id = $1
+              AND b.status = 'confirmed'
+              AND b.end_time + INTERVAL '15 minutes' < NOW()
+            RETURNING b.id, b.listing_id, l.address, b.fine_amount
         `, [userId]);
 
-        // Create an overstay notification for each newly detected overstay
+        // Notify driver and owner about overstay fine
         for (const booking of overstayed.rows) {
-            const listingRes = await pool.query(
-                'SELECT address FROM listings WHERE id = $1', [booking.listing_id]
+            const fine = parseFloat(booking.fine_amount).toFixed(2);
+            const address = booking.address || 'your parking spot';
+            await notify(userId, 'Overstay Fine',
+                `You have overstayed at ${address}. A fine of $${fine} has been applied. Please pay to avoid further charges.`
             );
-            const address = listingRes.rows[0]?.address || 'your parking spot';
-            await notify(
-                userId,
-                'Overstay Alert',
-                `You have exceeded the 15-minute grace period at ${address}. Please vacate immediately to avoid additional charges.`
+            // Notify owner
+            const ownerRes = await pool.query(
+                'SELECT user_id FROM listings WHERE id = $1', [booking.listing_id]
             );
+            if (ownerRes.rows.length > 0) {
+                await notify(ownerRes.rows[0].user_id, 'Overstay Detected',
+                    `A driver is overstaying at ${address}. A fine of $${fine} has been applied.`
+                );
+            }
         }
 
         const result = await pool.query(`
@@ -54,6 +55,7 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
                    b.start_time as "startTime", b.end_time as "endTime",
                    b.total_price as "totalPrice", b.status,
                    b.reference_code as "referenceCode",
+                   b.fine_amount as "fineAmount", b.fine_paid as "finePaid",
                    l.address, l.price_per_hour as "pricePerHour"
             FROM bookings b
             JOIN listings l ON b.listing_id = l.id
@@ -65,6 +67,50 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Get bookings error:', error);
         res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+});
+
+// GET /bookings/owner-earnings/:userId - Get owner's earnings summary
+router.get('/owner-earnings/:userId', authenticateToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (userId !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+
+        const result = await pool.query(`
+            SELECT
+                l.id as "listingId",
+                l.address,
+                COALESCE(SUM(CASE WHEN b.status IN ('confirmed','completed','overstay')
+                    THEN b.total_price ELSE 0 END), 0) as earnings,
+                COALESCE(SUM(CASE WHEN b.fine_paid = true THEN b.fine_amount ELSE 0 END), 0) as "fineEarnings",
+                COUNT(CASE WHEN b.status IN ('confirmed','completed','overstay') THEN 1 END) as "bookingCount"
+            FROM listings l
+            LEFT JOIN bookings b ON b.listing_id = l.id
+            WHERE l.user_id = $1
+            GROUP BY l.id, l.address
+            ORDER BY earnings DESC
+        `, [userId]);
+
+        const rows = result.rows;
+        const totalEarnings  = rows.reduce((s, r) => s + parseFloat(r.earnings), 0);
+        const totalFines     = rows.reduce((s, r) => s + parseFloat(r.fineEarnings), 0);
+        const totalBookings  = rows.reduce((s, r) => s + parseInt(r.bookingCount), 0);
+
+        res.json({
+            totalEarnings:     Math.round(totalEarnings * 100) / 100,
+            totalFineEarnings: Math.round(totalFines * 100) / 100,
+            totalBookings,
+            listings: rows.map(r => ({
+                listingId:    r.listingId,
+                address:      r.address,
+                earnings:     Math.round(parseFloat(r.earnings) * 100) / 100,
+                fineEarnings: Math.round(parseFloat(r.fineEarnings) * 100) / 100,
+                bookingCount: parseInt(r.bookingCount)
+            }))
+        });
+    } catch (error) {
+        console.error('Owner earnings error:', error);
+        res.status(500).json({ error: 'Failed to fetch earnings' });
     }
 });
 
@@ -109,9 +155,9 @@ router.post('/create', authenticateToken, async (req, res) => {
         // Check for conflicting bookings on the same listing
         const conflict = await pool.query(`
             SELECT COUNT(*) FROM bookings
-            WHERE listing_id = $1
+            WHERE listing_id = $1::uuid
               AND status IN ('confirmed', 'pending', 'overstay')
-              AND NOT (end_time <= $2 OR start_time >= $3)
+              AND NOT (end_time <= $2::timestamptz OR start_time >= $3::timestamptz)
         `, [listingId, startTime, endTime]);
 
         if (parseInt(conflict.rows[0].count) > 0) {
@@ -124,7 +170,7 @@ router.post('/create', authenticateToken, async (req, res) => {
             try {
                 const result = await pool.query(`
                     INSERT INTO bookings (listing_id, user_id, start_time, end_time, total_price, status, reference_code)
-                    VALUES ($1, $2, $3, $4, $5, 'confirmed', $6)
+                    VALUES ($1::uuid, $2::uuid, $3::timestamptz, $4::timestamptz, $5, 'confirmed', $6)
                     RETURNING id, listing_id as "listingId", user_id as "userId",
                               start_time as "startTime", end_time as "endTime",
                               total_price as "totalPrice", status, reference_code as "referenceCode"
@@ -154,11 +200,50 @@ router.post('/create', authenticateToken, async (req, res) => {
         console.error('Create booking error (reference collision):', lastError);
         res.status(500).json({ error: 'Failed to assign reservation code' });
     } catch (error) {
-        console.error('Create booking error:', error);
+        console.error('Create booking error | code:', error.code, '| message:', error.message, '| detail:', error.detail);
         if (error.code === '23503') {
-            return res.status(400).json({ error: 'Invalid listing or user' });
+            return res.status(400).json({ error: 'Invalid listing or user ID' });
         }
-        res.status(500).json({ error: 'Failed to create booking' });
+        if (error.code === '22P02') {
+            return res.status(400).json({ error: 'Invalid UUID or timestamp format', detail: error.message });
+        }
+        if (error.code === '22007' || error.code === '22008') {
+            return res.status(400).json({ error: 'Invalid date/time value', detail: error.message });
+        }
+        res.status(500).json({ error: 'Failed to create booking', detail: error.message });
+    }
+});
+
+// PUT /bookings/:id/pay-fine - Mark overstay fine as paid
+router.put('/:id/pay-fine', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            UPDATE bookings
+            SET fine_paid = true, status = 'completed', updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1 AND user_id = $2 AND status = 'overstay'
+            RETURNING id, fine_amount as "fineAmount"
+        `, [id, req.user.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found or not in overstay status' });
+        }
+
+        const fine = parseFloat(result.rows[0].fineAmount).toFixed(2);
+        const ownerRes = await pool.query(`
+            SELECT l.user_id as owner_id, l.address FROM bookings b
+            JOIN listings l ON b.listing_id = l.id WHERE b.id = $1
+        `, [id]);
+        if (ownerRes.rows.length > 0) {
+            const { owner_id, address } = ownerRes.rows[0];
+            await notify(owner_id, 'Fine Collected',
+                `Overstay fine of $${fine} paid for your spot at ${address}.`);
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Pay fine error:', error);
+        res.status(500).json({ error: 'Failed to process fine payment' });
     }
 });
 

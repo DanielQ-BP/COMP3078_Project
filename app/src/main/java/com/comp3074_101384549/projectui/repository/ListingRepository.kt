@@ -71,6 +71,30 @@ class ListingRepository(
     }
 
     /**
+     * Searches listings via backend API with full filters.
+     * Falls back to local searchAllListings on error.
+     */
+    suspend fun searchListingsRemote(
+        address: String? = null,
+        minPrice: Double? = null,
+        maxPrice: Double? = null,
+        date: String? = null,
+        sortBy: String? = null
+    ): List<Listing> {
+        return try {
+            apiService.searchListings(
+                address = if (address.isNullOrBlank()) null else address,
+                minPrice = if (minPrice != null && minPrice > 0) minPrice else null,
+                maxPrice = if (maxPrice != null && maxPrice > 0) maxPrice else null,
+                date = if (date.isNullOrBlank()) null else date,
+                sortBy = sortBy
+            )
+        } catch (e: Exception) {
+            searchAllListings(address ?: "", maxPrice)
+        }
+    }
+
+    /**
      * Searches all listings regardless of owner (driver browse view).
      * Searches the local Room cache.
      */

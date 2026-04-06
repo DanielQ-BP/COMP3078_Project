@@ -10,7 +10,7 @@ import com.comp3074_101384549.projectui.model.ListingEntity
  */
 @Database(
     entities = [ListingEntity::class, BookingEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

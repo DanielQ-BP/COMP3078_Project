@@ -5,6 +5,7 @@ import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.model.BookingEntity
 import com.comp3074_101384549.projectui.model.CreateBookingRequest
 import com.comp3074_101384549.projectui.model.UpdateBookingStatusRequest
+import com.comp3074_101384549.projectui.model.toBookingEntity
 import kotlinx.coroutines.flow.first
 import retrofit2.HttpException
 
@@ -77,6 +78,14 @@ class BookingRepository(
             bookingDao.insert(booking)
             booking
         }
+    }
+
+    /**
+     * Saves an already-created booking directly to local Room cache (no API call).
+     * Use this after creating a booking via the API directly to avoid a duplicate request.
+     */
+    suspend fun saveBookingLocally(booking: BookingEntity) {
+        bookingDao.insert(booking)
     }
 
     /**

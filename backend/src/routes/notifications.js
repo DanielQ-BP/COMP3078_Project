@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { notify } = require('../notify');
 
 const router = express.Router();
 
@@ -48,18 +49,32 @@ router.put('/:id/read', authenticateToken, async (req, res) => {
     }
 });
 
+// PUT /notifications/read-all - Mark all notifications as read
+router.put('/read-all', authenticateToken, async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false',
+            [req.user.id]
+        );
+        res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+        console.error('Mark all read error:', error);
+        res.status(500).json({ error: 'Failed to mark notifications as read' });
+    }
+});
+
 // POST /notifications/create - Create notification (internal use)
 router.post('/create', authenticateToken, async (req, res) => {
     try {
         const { userId, title, message } = req.body;
-
+        await notify(userId, title, message);
         const result = await pool.query(`
-            INSERT INTO notifications (user_id, title, message)
-            VALUES ($1, $2, $3)
-            RETURNING id, user_id as "userId", title, message,
-                      is_read as "isRead", created_at as "createdAt"
-        `, [userId, title, message]);
-
+            SELECT id, user_id as "userId", title, message,
+                   is_read as "isRead", created_at as "createdAt"
+            FROM notifications
+            WHERE user_id = $1
+            ORDER BY created_at DESC LIMIT 1
+        `, [userId]);
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Create notification error:', error);

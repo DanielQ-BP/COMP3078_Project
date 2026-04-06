@@ -98,6 +98,20 @@ router.put('/:id/password', authenticateToken, async (req, res) => {
     }
 });
 
+// PUT /users/:id/fcm-token - Save device FCM token
+router.put('/:id/fcm-token', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { token } = req.body;
+        if (id !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+        await pool.query('UPDATE users SET fcm_token = $1 WHERE id = $2', [token, id]);
+        res.json({ message: 'FCM token saved' });
+    } catch (error) {
+        console.error('FCM token error:', error);
+        res.status(500).json({ error: 'Failed to save token' });
+    }
+});
+
 // DELETE /users/:id - Delete user account
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
