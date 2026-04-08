@@ -113,7 +113,7 @@ class PaymentFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val amountCents = (totalPrice * 100).toInt().coerceAtLeast(50)
+                val amountCents = Math.round(totalPrice * 100).toInt().coerceAtLeast(50)
                 val response = apiService.createPaymentIntent(
                     PaymentIntentRequest(amount = amountCents, currency = "usd")
                 )

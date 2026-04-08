@@ -6,6 +6,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -91,6 +93,7 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
         return inflater.inflate(R.layout.fragment_listing_details, container, false)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -117,6 +120,7 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
         setupButtons(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun setupButtons(view: View) {
         view.findViewById<Button>(R.id.buttonShowRoute)?.setOnClickListener {
             showRoute()
@@ -135,22 +139,44 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun showBookingDialog() {
         val calendar = Calendar.getInstance()
+        val today = String.format(
+            "%04d-%02d-%02d",
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        val nowHour = calendar.get(Calendar.HOUR_OF_DAY)
+        val nowMinute = calendar.get(Calendar.MINUTE)
 
         // Date picker
         DatePickerDialog(
             requireContext(),
             { _, year, month, day ->
                 val selectedDate = String.format("%04d-%02d-%02d", year, month + 1, day)
+                val isToday = selectedDate == today
 
                 // Start time picker
                 TimePickerDialog(
                     requireContext(),
                     { _, startHour, startMinute ->
+
+                        // Reject start times in the past when booking for today
+                        if (isToday && (startHour * 60 + startMinute) < (nowHour * 60 + nowMinute)) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Start time must be in the future",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@TimePickerDialog
+                        }
+
                         val startTime = String.format("%02d:%02d", startHour, startMinute)
 
-                        // End time picker
+                        // End time picker — default to one hour after the chosen start
+                        val defaultEndHour = (startHour + 1).coerceAtMost(23)
                         TimePickerDialog(
                             requireContext(),
                             { _, endHour, endMinute ->
@@ -171,15 +197,15 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
                                 // Show confirmation dialog
                                 showBookingConfirmation(selectedDate, startTime, endTime, durationHours, totalPrice)
                             },
-                            calendar.get(Calendar.HOUR_OF_DAY) + 1,
+                            defaultEndHour,
                             0,
                             true
                         ).apply {
                             setTitle("Select End Time")
                         }.show()
                     },
-                    calendar.get(Calendar.HOUR_OF_DAY),
-                    0,
+                    if (isToday) nowHour else 9,
+                    if (isToday) nowMinute else 0,
                     true
                 ).apply {
                     setTitle("Select Start Time")
@@ -194,6 +220,7 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
         }.show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun showBookingConfirmation(
         date: String,
         startTime: String,
@@ -223,6 +250,7 @@ class ListingDetailsFragment : Fragment(), OnMapReadyCallback {
             .show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun createBooking(date: String, startTime: String, endTime: String, totalPrice: Double) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {

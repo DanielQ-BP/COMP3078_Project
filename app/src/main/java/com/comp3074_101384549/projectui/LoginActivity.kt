@@ -33,8 +33,8 @@ class LoginActivity : AppCompatActivity() {
         authPreferences = AuthPreferences(applicationContext)
 
         binding.adminLoginCheckBox.setOnCheckedChangeListener { _, checked ->
-            binding.adminIdEditText.visibility = if (checked) View.VISIBLE else View.GONE
-            if (!checked) binding.adminIdEditText.text.clear()
+            binding.adminIdInputLayout.visibility = if (checked) View.VISIBLE else View.GONE
+            if (!checked) binding.adminIdEditText.text?.clear()
         }
 
         binding.loginButton.setOnClickListener {
@@ -90,15 +90,26 @@ class LoginActivity : AppCompatActivity() {
                 return
             }
 
+            // Fetch listings to determine if user already has an owner account
+            val hasOwner = try {
+                val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
+                val wasRegisteredOwner = sharedPrefs.getBoolean("isOwner_$userId", false)
+                wasRegisteredOwner || api.getUserListings(userId).isNotEmpty()
+            } catch (_: Exception) {
+                val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
+                sharedPrefs.getBoolean("isOwner_$userId", false)
+            }
+
             authPreferences.saveAuthDetails(
                 token = token,
                 userId = userId,
                 username = uname,
                 email = email,
-                hasOwnerAccount = false,
-                currentMode = AuthPreferences.MODE_DRIVER,
+                hasOwnerAccount = hasOwner,
+                currentMode = AuthPreferences.MODE_DRIVER, // admins don't need owner mode
                 role = role,
             )
+
             getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE).edit()
                 .putString("username", uname)
                 .apply()
@@ -140,13 +151,23 @@ class LoginActivity : AppCompatActivity() {
                 return
             }
 
+            // Fetch profile to check if user already has an owner account
+            val hasOwner = try {
+                val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
+                val wasRegisteredOwner = sharedPrefs.getBoolean("isOwner_$userId", false)
+                wasRegisteredOwner || api.getUserListings(userId).isNotEmpty()
+            } catch (_: Exception) {
+                val sharedPrefs = getSharedPreferences("MockUserDB", Context.MODE_PRIVATE)
+                sharedPrefs.getBoolean("isOwner_$userId", false)
+            }
+
             authPreferences.saveAuthDetails(
                 token = token,
                 userId = userId,
                 username = uname,
                 email = email,
-                hasOwnerAccount = false,
-                currentMode = AuthPreferences.MODE_DRIVER,
+                hasOwnerAccount = hasOwner,
+                currentMode = if (hasOwner) AuthPreferences.MODE_OWNER else AuthPreferences.MODE_DRIVER,
                 role = role,
             )
             getSharedPreferences("ParkSpotPrefs", Context.MODE_PRIVATE).edit()

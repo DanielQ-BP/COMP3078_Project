@@ -5,11 +5,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.comp3074_101384549.projectui.data.local.AuthPreferences
 import com.comp3074_101384549.projectui.data.remote.ApiService
 import com.comp3074_101384549.projectui.databinding.ActivityRegistrationBinding
 import com.comp3074_101384549.projectui.model.User
-import com.comp3074_101384549.projectui.utils.JwtPayloadUtil
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import retrofit2.Retrofit
@@ -18,14 +16,15 @@ import retrofit2.converter.gson.GsonConverterFactory
 class RegistrationActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRegistrationBinding
-    private lateinit var authPreferences: AuthPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityRegistrationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        authPreferences = AuthPreferences(applicationContext)
+        binding.backButton.setOnClickListener {
+            finish()
+        }
 
         binding.registerConfirmButton.setOnClickListener {
             val username = binding.usernameEditText.text.toString().trim()
@@ -51,29 +50,10 @@ class RegistrationActivity : AppCompatActivity() {
         val api = retrofit.create(ApiService::class.java)
 
         try {
-            val token = api.register(User(username, email, password))
-            val payload = JwtPayloadUtil.readPayload(token)
-            if (payload == null) {
-                Toast.makeText(this, "Registration failed: invalid server response", Toast.LENGTH_SHORT).show()
-                return
-            }
-            val userId = payload.optString("id", "")
-            val uname = payload.optString("username", username)
-            val emailFromToken = payload.optString("email", email)
-            val role = payload.optString("role", "user")
+            api.register(User(username, email, password))
 
-            authPreferences.saveAuthDetails(
-                token = token,
-                userId = userId,
-                username = uname,
-                email = emailFromToken,
-                hasOwnerAccount = false,
-                currentMode = AuthPreferences.MODE_DRIVER,
-                role = role,
-            )
-
-            Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, HomeActivity::class.java))
+            Toast.makeText(this, "Registration Successful! Please log in.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
         } catch (e: HttpException) {
             val msg = when (e.code()) {
